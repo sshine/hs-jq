@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f980e40602ee79257246e64b3c98b9e6fb47334a728bbadd7e5c61ad09b9b0fc
+-- hash: ca402c7c75d9a5bc9bdb0984f540780309f213b62c44e46cfa1db014fbcf6d5d
 
 name:           jq
 version:        0.1.0
@@ -20,12 +20,16 @@ library
   exposed-modules:
       Data.Aeson.Jq
       Data.Aeson.Jq.Expr
+      Data.Aeson.Jq.Parser
   other-modules:
       Paths_jq
   hs-source-dirs:
       src
+  default-extensions: OverloadedStrings
   build-depends:
       base
+    , megaparsec
+    , scientific
     , text
   default-language: Haskell2010
 
@@ -35,8 +39,11 @@ executable jq
       Paths_jq
   hs-source-dirs:
       app
+  default-extensions: OverloadedStrings
   build-depends:
       base
+    , megaparsec
+    , scientific
     , text
   default-language: Haskell2010
 
@@ -44,14 +51,20 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: test.hs
   other-modules:
+      ParserTest
       Paths_jq
   hs-source-dirs:
       test
+  default-extensions: OverloadedStrings
   build-depends:
       base
     , hedgehog
     , hspec
+    , hspec-megaparsec
     , jq
+    , megaparsec
+    , raw-strings-qq
+    , scientific
     , tasty
     , tasty-discover
     , tasty-hedgehog
@@ -66,10 +79,13 @@ benchmark bench
       Paths_jq
   hs-source-dirs:
       bench
+  default-extensions: OverloadedStrings
   ghc-options: -O2
   build-depends:
       base
     , criterion
     , jq
+    , megaparsec
+    , scientific
     , text
   default-language: Haskell2010

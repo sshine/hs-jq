@@ -1,8 +1,11 @@
 
 module Data.Aeson.Jq.Expr
-  (
+  ( Expr(..)
+  , Term(..)
+  , Pattern(..)
   ) where
 
+import Data.Scientific (Scientific)
 import Data.Text (Text)
 
 {-
@@ -32,15 +35,20 @@ $ jq '.foo.bar'  <<< '{ "foo": { "bar": 42 } }' # syntax sugar for '.foo | .bar'
 
 -}
 
-data Expr = Term Term
-          | As Pattern
+data Expr = Term !Term
+          | As !Pattern
+          | StrLit !Text
+          | NumLit !Scientific
           deriving (Eq, Show)
+
+-- TODO: Perhaps keep a parameterized AST so that we can represent the
+-- syntax tree exactly as it was parsed, i.e. distinguish between the two:
+-- .foo and .["foo"], in one form of the tree, and in another form make such
+-- syntax sugar unexpressable. The same goes for .foo.bar -> .foo | .bar.
 
 data Term = Identity   -- .
-          | Index Expr -- .foo, .["foo"], .[1], .[.foo]
-          | StringLit Text 
-          | IntLit Int
+          | Index !Expr -- .foo, .["foo"], .[1], .[.foo]
           deriving (Eq, Show)
 
-data Pattern = Ident Text -- '... as $var'
+data Pattern = Ident !Text -- '... as $var'
              deriving (Eq, Show)

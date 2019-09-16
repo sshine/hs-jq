@@ -10,12 +10,18 @@ extra-source-files:
 
 dependencies:
   - base
+  - megaparsec
+  - scientific
   - text
+
+default-extensions:
+  - OverloadedStrings
 
 library:
   exposed-modules:
     - Data.Aeson.Jq
     - Data.Aeson.Jq.Expr
+    - Data.Aeson.Jq.Parser
   source-dirs: src
 
 executables:
@@ -35,6 +41,8 @@ tests:
       - tasty-hedgehog
       - hedgehog
       - hspec
+      - hspec-megaparsec
+      - raw-strings-qq
 
 benchmarks:
   bench:
