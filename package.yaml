@@ -10,10 +10,12 @@ extra-source-files:
 
 dependencies:
   - base
+  - text
 
 library:
   exposed-modules:
     - Data.Aeson.Jq
+    - Data.Aeson.Jq.Expr
   source-dirs: src
 
 executables:
