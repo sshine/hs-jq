@@ -1,0 +1,70 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 0622ef9661e30a8908665e2e7c21c1f5bfc471fb30cfd5cd994e54a5be4e0a18
+
+name:           jq
+version:        0.1.0
+homepage:       https://github.com/sshine/hs-jq
+author:         Simon Shine
+maintainer:     shreddedglory@gmail.com
+copyright:      2019 Simon Shine
+build-type:     Simple
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      Data.Aeson.Jq
+  other-modules:
+      Paths_jq
+  hs-source-dirs:
+      src
+  build-depends:
+      base
+  default-language: Haskell2010
+
+executable jq
+  main-is: Main.hs
+  other-modules:
+      Paths_jq
+  hs-source-dirs:
+      app
+  build-depends:
+      base
+  default-language: Haskell2010
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  other-modules:
+      Paths_jq
+  hs-source-dirs:
+      test
+  build-depends:
+      base
+    , hedgehog
+    , hspec
+    , jq
+    , tasty
+    , tasty-discover
+    , tasty-hedgehog
+    , tasty-hspec
+  default-language: Haskell2010
+
+benchmark bench
+  type: exitcode-stdio-1.0
+  main-is: bench.hs
+  other-modules:
+      Paths_jq
+  hs-source-dirs:
+      bench
+  ghc-options: -O2
+  build-depends:
+      base
+    , criterion
+    , jq
+  default-language: Haskell2010

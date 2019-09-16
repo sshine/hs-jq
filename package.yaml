@@ -1,0 +1,44 @@
+name: jq
+version: 0.1.0
+
+homepage: https://github.com/sshine/hs-jq
+author: Simon Shine
+maintainer: shreddedglory@gmail.com
+copyright: 2019 Simon Shine
+extra-source-files:
+  - README.md
+
+dependencies:
+  - base
+
+library:
+  exposed-modules:
+    - Data.Aeson.Jq
+  source-dirs: src
+
+executables:
+  jq:
+    source-dirs: app
+    main: Main.hs
+
+tests:
+  test:
+    main: test.hs
+    source-dirs: test
+    dependencies:
+      - jq
+      - tasty
+      - tasty-discover
+      - tasty-hspec
+      - tasty-hedgehog
+      - hedgehog
+      - hspec
+
+benchmarks:
+  bench:
+    main: bench.hs
+    source-dirs: bench
+    dependencies:
+      - jq
+      - criterion
+    ghc-options: -O2
