@@ -42,7 +42,10 @@ Conceptual.
 
 If you like this project, or if you're looking for an opportunity to
 practice writing open source Haskell, feel free to open an issue or a PR, or
-send me an email.
+send me an email. Since the project is still very early stage, it is probably
+best to begin with an issue or an email just so that nobody steps on nobody's
+toes. I will be creating some issues soon to mark areas that I'm not actively
+working on.
 
 [1]: https://github.com/stedolan/jq
 [2]: http://hackage.haskell.org/package/hedgehog
