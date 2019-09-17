@@ -77,8 +77,11 @@ string = quotes content
     --     't'
     --     'u' hex hex hex hex
 
--- TODO: Also parse negative numbers; don't rely on 'signed', since it
--- allows for prefix '+', which jq does not support:
+
+-- NOTE: The JSON specification only allows prefix '-', not prefix '+'.
+-- 'jq' does not allow prefix '+' in its own expressions, but it does parse
+-- prefix '+' in JSON. 'hs-jq' uses Aeson to parse JSON, and it does not
+-- parse prefix '+'. This is a discrepancy between 'jq' and 'hs-jq'.
 --
 --  $ echo "+42" | jq .
 --  42
@@ -86,9 +89,11 @@ string = quotes content
 --  jq: error: syntax error, unexpected '+', expecting $end (Unix shell quoting issues?) at <top-level>, line 1:
 --  +42
 --  jq: 1 compile error
-
 number :: Parser Scientific
-number = scientific <?> "number"
+number = negative <*> scientific <?> "number"
+  where
+    negative :: Parser (Scientific -> Scientific)
+    negative = try (chunk "-" $> negate) <|> pure id
 
 dot :: Parser ()
 dot = sym "." <?> "dot"

@@ -53,13 +53,16 @@ spec_StrLit =
 -- prop_NumLit = undefined
 
 spec_NumLit :: Spec
-spec_NumLit =
+spec_NumLit = do
   describe "expr parses" $ do
-    it "zero" $
-      parse expr "" "0" `shouldParse` NumLit 0
+    "0"     `shouldParseAs` NumLit 0
+    "-1"    `shouldParseAs` NumLit (-1)
+    "2.5"   `shouldParseAs` NumLit 2.5
+    "-2.5"  `shouldParseAs` NumLit (-2.5)
+    "1e100" `shouldParseAs` NumLit 1e100
 
-    it "negative one" $
-      parse expr "" "-1" `shouldParse` NumLit (-1)
+  describe "expr does not parse" $
+    it "\"+42\"" $ expr' `shouldFailOn` "+42"
 
     it "two point five" $
       parse expr "" "2.5" `shouldParse` NumLit 2.5
