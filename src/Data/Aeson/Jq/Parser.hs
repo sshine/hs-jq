@@ -21,18 +21,25 @@ import           Data.Aeson.Jq.Expr
 
 type Parser = Parsec Void Text
 
+-- TODO: Split expr in two, one with and one without ':' and ','.
+
 expr :: Parser Expr
 expr = asum
   [ Term <$> term
-  , ListLit <$> list
+  , Obj <$> obj
+  , List <$> list
   , StrLit <$> string
   , NumLit <$> number
   , BoolLit <$> bool
   , NullLit <$ sym "null"
+  , between (sym "(") (sym ")") expr -- TODO: Make AST constructor
   ]
 
 term :: Parser Term
-term = asum [ dotIndexTerm ]
+term = asum
+  [ dotIndexTerm
+  , Var <$> var
+  ]
 
 dotIndexTerm :: Parser Term
 dotIndexTerm = do
@@ -40,18 +47,35 @@ dotIndexTerm = do
   asum [ Index <$> brackets expr
        , Index . StrLit <$> field
        ]
-  where
-    -- [a-zA-Z_][a-zA-Z_0-9]*
-    field :: Parser Text
-    field = label "field" $
-      Text.cons <$> satisfy isFieldFirstChar
-                <*> takeWhile1P Nothing isFieldChar
 
+-- TODO: Parse keywords.
+-- TODO: Make another 'field' parser that disallows keywords
+-- TODO: Rename 'field :: Parser Text' to 'ident :: Parser Ident'
+
+-- [a-zA-Z_][a-zA-Z_0-9]*
+field :: Parser Text
+field = label "field" $
+  Text.cons <$> satisfy isFieldFirstChar
+            <*> takeWhile1P Nothing isFieldChar
+  where
     isFieldFirstChar c = isAscii c && isLetter c || c == '_'
     isFieldChar c = isFieldFirstChar c || isDigit c
 
+obj :: Parser [ObjElem]
+obj = between (sym "{") (sym "}") (objElem `sepBy` sym ",")
+
+-- TODO: This is way too liberal. See notes in AST.
+objElem :: Parser ObjElem
+objElem = ObjPair <$> key <*> value
+  where
+    key = (StrLit <$> field) <|> expr
+    value = optional (sym ":" *> expr)
+
 list :: Parser [Expr]
 list = between (sym "[") (sym "]") (expr `sepBy` sym ",")
+
+var :: Parser Text
+var = chunk "$" *> field
 
 string :: Parser Text
 string = quotes content

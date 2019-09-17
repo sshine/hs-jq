@@ -2,6 +2,7 @@
 module Data.Aeson.Jq.Expr
   ( Expr(..)
   , Term(..)
+  , ObjElem(..)
   , Pattern(..)
   ) where
 
@@ -35,23 +36,51 @@ $ jq '.foo.bar'  <<< '{ "foo": { "bar": 42 } }' # syntax sugar for '.foo | .bar'
 
 -}
 
+type Ident = Text
+
 data Expr = Term !Term
           | As !Pattern
-          | ListLit ![Expr]
+          | Obj ![ObjElem]
+          | List ![Expr]
           | StrLit !Text
           | NumLit !Scientific
           | BoolLit !Bool
           | NullLit
           deriving (Eq, Show)
 
--- TODO: Perhaps keep a parameterized AST so that we can represent the
--- syntax tree exactly as it was parsed, i.e. distinguish between the two:
--- .foo and .["foo"], in one form of the tree, and in another form make such
--- syntax sugar unexpressable. The same goes for .foo.bar -> .foo | .bar.
+-- TODO: After asking Athas, I've decided to make two ASTs so that we can
+-- represent the syntax tree exactly as it was parsed, i.e. distinguish
+-- between the two: .foo and .["foo"], in one form of the tree, and in
+-- another form make such syntax sugar unexpressable. The same goes for
+-- .foo.bar -> .foo | .bar.
+
+-- TODO: Find out why Var is a Term and not an Expr.
 
 data Term = Identity   -- .
           | Index !Expr -- .foo, .["foo"], .[1], .[.foo]
+          | Var Ident
           deriving (Eq, Show)
+
+-- This is what JBOL's BNF calls MkDictPair.
+--
+-- I don't quite understand this part of the grammar:
+--   Keyword ':' ExpD
+--
+-- Explanation:
+--
+-- jq supports {foo: "bar"} as shorthand for {"foo": "bar"}, and this
+-- naturally extends to keywords. So the Keyword part of the BNF makes this
+-- explicit.
+--
+-- The grammar only allows a subset of expressions, ExpD, to avoid ambiguity
+-- in at least ':' and ',': Both of these can occur in expressions, but they
+-- also occur as part of dictionary syntax.
+--
+-- For now, simplify things and deal with ambiguities in the parser.
+data ObjElem = ObjPair Expr (Maybe Expr)
+             deriving (Eq, Show)
+
+-- TODO: Split this into ObjExprPair, ObjIdentPair, singles, etc.
 
 data Pattern = Ident !Text -- '... as $var'
              deriving (Eq, Show)

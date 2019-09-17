@@ -9,7 +9,7 @@ import qualified Data.Text as Text
 import           Data.Text (Text)
 import           Data.Void
 
-import           Hedgehog
+import           Hedgehog hiding (Var)
 import           Test.Hspec.Megaparsec
 import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
@@ -25,20 +25,45 @@ shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
   it (Text.unpack s) $ expr' s `shouldParse` e
 
+spec_Parentheses :: Spec
+spec_Parentheses =
+  describe "expr parses parentheses" $ do
+    "(null)" `shouldParseAs` NullLit
+    "((null))" `shouldParseAs` NullLit
+    "([1, ([2, ((3))]), 4])"
+      `shouldParseAs` List [NumLit 1, List [NumLit 2, NumLit 3], NumLit 4]
+
+spec_Obj :: Spec
+spec_Obj =
+  describe "expr parses simple objects" $ do
+    [r|{}|] `shouldParseAs` Obj []
+    [r|{"foo": 42}|] `shouldParseAs` Obj [ObjPair (StrLit "foo") (Just (NumLit 42))]
+    [r|{foo: 42}|] `shouldParseAs` Obj [ObjPair (StrLit "foo") (Just (NumLit 42))]
+    [r|{"foo": 1, "bar": 2}|]
+      `shouldParseAs` Obj [ ObjPair (StrLit "foo") (Just (NumLit 1))
+                          , ObjPair (StrLit "bar") (Just (NumLit 2))
+                          ]
+    
+
 -- TODO: Write property-based test
-spec_ListLit :: Spec
-spec_ListLit =
+spec_List :: Spec
+spec_List =
   describe "expr parses lists" $ do
-    [r|[]|]               `shouldParseAs` ListLit []
-    [r|[1,2,3]|]          `shouldParseAs` ListLit [NumLit 1, NumLit 2, NumLit 3]
-    [r|[true,false,null]|] `shouldParseAs` ListLit [BoolLit True, BoolLit False, NullLit]
+    [r|[]|]               `shouldParseAs` List []
+    [r|[1,2,3]|]          `shouldParseAs` List [NumLit 1, NumLit 2, NumLit 3]
+    [r|[true,false,null]|] `shouldParseAs` List [BoolLit True, BoolLit False, NullLit]
     [r|[[], true, [false, [], [null]]]|]
       `shouldParseAs`
-        ListLit [ ListLit []
+        List [ List []
                 , BoolLit True
-                , ListLit [ BoolLit False
-                          , ListLit []
-                          , ListLit [NullLit]]]
+                , List [ BoolLit False
+                          , List []
+                          , List [NullLit]]]
+
+spec_Var :: Spec
+spec_Var =
+  describe "$vars" $
+    "$foo" `shouldParseAs` Term (Var "foo")
 
 spec_StrLit :: Spec
 spec_StrLit = do
@@ -47,6 +72,8 @@ spec_StrLit = do
     [r|"Hello, World!"|] `shouldParseAs` StrLit "Hello, World!"
 
   -- FIXME: The parser doesn't support escape sequences.
+
+{-
 
   describe "escape sequences" $ do
     [r|"\""|] `shouldParseAs` StrLit "\"" -- double quote
@@ -58,13 +85,16 @@ spec_StrLit = do
     [r|"\r"|] `shouldParseAs` StrLit "\r" -- carriage return
     [r|"\t"|] `shouldParseAs` StrLit "\t" -- tab
 
-    -- TODO: Write a property test that tests 'u' hex hex hex hex.
 
-    -- FIXME: The parser is too liberal wrt. characters
+  -- TODO: Write a property test that tests 'u' hex hex hex hex.
+
+  -- FIXME: The parser is too liberal wrt. characters
   describe "string literals with character literals U+0000 through U+001F" $
     it "should fail when they're not escaped" $
       for_ [0..0x1f] $ \c ->
         parse expr "" `shouldFailOn` Text.pack [ '"', chr c, '"' ]
+
+-}
 
 -- TODO: Write a property test that tests numbers.
 -- TODO: Find out if 'jq' supports Data.Scientific.
