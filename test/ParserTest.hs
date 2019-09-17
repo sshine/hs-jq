@@ -6,41 +6,63 @@ module ParserTest where
 import           Data.Char (chr)
 import           Data.Foldable (for_)
 import qualified Data.Text as Text
+import           Data.Text (Text)
+import           Data.Void
 
 import           Hedgehog
 import           Test.Hspec.Megaparsec
-import           Text.Megaparsec (parse)
+import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
 import           Test.Tasty.Hspec
 
 import           Data.Aeson.Jq.Expr
 import           Data.Aeson.Jq.Parser
 
+expr' :: Text -> Either (ParseErrorBundle Text Void) Expr
+expr' = parse expr ""
+
+shouldParseAs :: Text -> Expr -> Spec
+shouldParseAs s e =
+  it (Text.unpack s) $ expr' s `shouldParse` e
+
+-- TODO: Write property-based test
+spec_ListLit :: Spec
+spec_ListLit =
+  describe "expr parses lists" $ do
+    [r|[]|]               `shouldParseAs` ListLit []
+    [r|[1,2,3]|]          `shouldParseAs` ListLit [NumLit 1, NumLit 2, NumLit 3]
+    [r|[true,false,null]|] `shouldParseAs` ListLit [BoolLit True, BoolLit False, NullLit]
+    [r|[[], true, [false, [], [null]]]|]
+      `shouldParseAs`
+        ListLit [ ListLit []
+                , BoolLit True
+                , ListLit [ BoolLit False
+                          , ListLit []
+                          , ListLit [NullLit]]]
+
 spec_StrLit :: Spec
-spec_StrLit =
+spec_StrLit = do
   describe "expr parses" $ do
-    it "the empty string literal" $
-      parse expr "" [r|""|] `shouldParse` StrLit ""
+    [r|""|]              `shouldParseAs` StrLit ""
+    [r|"Hello, World!"|] `shouldParseAs` StrLit "Hello, World!"
 
-    it "a non-empty string literal" $
-      parse expr "" [r|"Hello, World!"|] `shouldParse` StrLit "Hello, World!"
+  -- FIXME: The parser doesn't support escape sequences.
 
-    -- FIXME: The parser doesn't support escape sequences.
-
-    it "escape sequences" $ do
-      parse expr "" [r|"\""|] `shouldParse` StrLit "\"" -- double quote
-      parse expr "" [r|"\\"|] `shouldParse` StrLit "\\" -- backslash
-      parse expr "" [r|"\/"|] `shouldParse` StrLit "/"  -- forward slash
-      parse expr "" [r|"\b"|] `shouldParse` StrLit "\b" -- backspace
-      parse expr "" [r|"\f"|] `shouldParse` StrLit "\f" -- new page
-      parse expr "" [r|"\n"|] `shouldParse` StrLit "\n" -- newline
-      parse expr "" [r|"\r"|] `shouldParse` StrLit "\r" -- carriage return
-      parse expr "" [r|"\t"|] `shouldParse` StrLit "\t" -- tab
+  describe "escape sequences" $ do
+    [r|"\""|] `shouldParseAs` StrLit "\"" -- double quote
+    [r|"\\"|] `shouldParseAs` StrLit "\\" -- backslash
+    [r|"\/"|] `shouldParseAs` StrLit "/"  -- forward slash
+    [r|"\b"|] `shouldParseAs` StrLit "\b" -- backspace
+    [r|"\f"|] `shouldParseAs` StrLit "\f" -- new page
+    [r|"\n"|] `shouldParseAs` StrLit "\n" -- newline
+    [r|"\r"|] `shouldParseAs` StrLit "\r" -- carriage return
+    [r|"\t"|] `shouldParseAs` StrLit "\t" -- tab
 
     -- TODO: Write a property test that tests 'u' hex hex hex hex.
 
     -- FIXME: The parser is too liberal wrt. characters
-    it "not string literals with character literals U+0000 through U+001F must be escaped" $
+  describe "string literals with character literals U+0000 through U+001F" $
+    it "should fail when they're not escaped" $
       for_ [0..0x1f] $ \c ->
         parse expr "" `shouldFailOn` Text.pack [ '"', chr c, '"' ]
 
@@ -64,8 +86,9 @@ spec_NumLit = do
   describe "expr does not parse" $
     it "\"+42\"" $ expr' `shouldFailOn` "+42"
 
-    it "two point five" $
-      parse expr "" "2.5" `shouldParse` NumLit 2.5
-
-    it "googol" $
-      parse expr "" "1e100" `shouldParse` NumLit 1e100
+spec_BoolLit_NullLit :: Spec
+spec_BoolLit_NullLit =
+  describe "expr parses" $ do
+    "true"  `shouldParseAs` BoolLit True
+    "false" `shouldParseAs` BoolLit False
+    "null"  `shouldParseAs` NullLit

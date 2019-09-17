@@ -24,8 +24,11 @@ type Parser = Parsec Void Text
 expr :: Parser Expr
 expr = asum
   [ Term <$> term
+  , ListLit <$> list
   , StrLit <$> string
   , NumLit <$> number
+  , BoolLit <$> bool
+  , NullLit <$ sym "null"
   ]
 
 term :: Parser Term
@@ -37,15 +40,18 @@ dotIndexTerm = do
   asum [ Index <$> brackets expr
        , Index . StrLit <$> field
        ]
-
--- [a-zA-Z_][a-zA-Z_0-9]*
-field :: Parser Text
-field = label "field" $
-  Text.cons <$> satisfy isFieldFirstChar
-            <*> takeWhile1P Nothing isFieldChar
   where
+    -- [a-zA-Z_][a-zA-Z_0-9]*
+    field :: Parser Text
+    field = label "field" $
+      Text.cons <$> satisfy isFieldFirstChar
+                <*> takeWhile1P Nothing isFieldChar
+
     isFieldFirstChar c = isAscii c && isLetter c || c == '_'
     isFieldChar c = isFieldFirstChar c || isDigit c
+
+list :: Parser [Expr]
+list = between (sym "[") (sym "]") (expr `sepBy` sym ",")
 
 string :: Parser Text
 string = quotes content
@@ -94,6 +100,11 @@ number = negative <*> scientific <?> "number"
   where
     negative :: Parser (Scientific -> Scientific)
     negative = try (chunk "-" $> negate) <|> pure id
+
+bool :: Parser Bool
+bool = asum [ sym "true" $> True
+            , sym "false" $> False
+            ]
 
 dot :: Parser ()
 dot = sym "." <?> "dot"

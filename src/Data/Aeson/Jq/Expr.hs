@@ -37,8 +37,11 @@ $ jq '.foo.bar'  <<< '{ "foo": { "bar": 42 } }' # syntax sugar for '.foo | .bar'
 
 data Expr = Term !Term
           | As !Pattern
+          | ListLit ![Expr]
           | StrLit !Text
           | NumLit !Scientific
+          | BoolLit !Bool
+          | NullLit
           deriving (Eq, Show)
 
 -- TODO: Perhaps keep a parameterized AST so that we can represent the
