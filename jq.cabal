@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ca402c7c75d9a5bc9bdb0984f540780309f213b62c44e46cfa1db014fbcf6d5d
+-- hash: 855e11a5be79431a8bc055a866a64271762b4400473aca8e94003e4b74fa634f
 
 name:           jq
 version:        0.1.0
@@ -29,6 +29,7 @@ library
   build-depends:
       base
     , megaparsec
+    , parser-combinators
     , scientific
     , text
   default-language: Haskell2010
@@ -43,6 +44,7 @@ executable jq
   build-depends:
       base
     , megaparsec
+    , parser-combinators
     , scientific
     , text
   default-language: Haskell2010
@@ -63,6 +65,7 @@ test-suite test
     , hspec-megaparsec
     , jq
     , megaparsec
+    , parser-combinators
     , raw-strings-qq
     , scientific
     , tasty
@@ -86,6 +89,7 @@ benchmark bench
     , criterion
     , jq
     , megaparsec
+    , parser-combinators
     , scientific
     , text
   default-language: Haskell2010

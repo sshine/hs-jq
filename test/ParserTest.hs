@@ -18,12 +18,23 @@ import           Test.Tasty.Hspec
 import           Data.Aeson.Jq.Expr
 import           Data.Aeson.Jq.Parser
 
+-- TODO: Run all these: https://github.com/stedolan/jq/blob/master/tests/jq.test
+
 expr' :: Text -> Either (ParseErrorBundle Text Void) Expr
 expr' = parse expr ""
 
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
   it (Text.unpack s) $ expr' s `shouldParse` e
+
+spec_Pipe :: Spec
+spec_Pipe =
+  describe "expr parses pipes" $ do
+    "1 | 2" `shouldParseAs` Pipe (NumLit 1) (NumLit 2)
+    ".foo | .bar" `shouldParseAs` Pipe (Term (Index (StrLit "foo")))
+                                       (Term (Index (StrLit "bar")))
+    "1 | 2 | 3" `shouldParseAs` Pipe (NumLit 1) (Pipe (NumLit 2) (NumLit 3))
+    "(1 | 2) | 3" `shouldParseAs` Pipe (Pipe (NumLit 1) (NumLit 2)) (NumLit 3)
 
 spec_Parentheses :: Spec
 spec_Parentheses =

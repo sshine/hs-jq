@@ -16,15 +16,27 @@ import           Control.Monad (void)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char (space)
 import           Text.Megaparsec.Char.Lexer (scientific)
+import           Control.Monad.Combinators.Expr
 
 import           Data.Aeson.Jq.Expr
 
 type Parser = Parsec Void Text
 
--- TODO: Split expr in two, one with and one without ':' and ','.
+-- TODO: Split expr in two again, one with and one without ':' and ','.
+
+-- The split below is just to handle binary operators.
 
 expr :: Parser Expr
-expr = asum
+expr = makeExprParser expr1 exprOperators
+
+exprOperators :: [[Operator Parser Expr]]
+exprOperators =
+  [ -- [ Prefix (Neg <$ sym "-") ]
+    [ InfixR (Pipe <$ sym "|") ]
+  ]
+
+expr1 :: Parser Expr
+expr1 = asum
   [ Term <$> term
   , Obj <$> obj
   , List <$> list
@@ -45,7 +57,7 @@ dotIndexTerm :: Parser Term
 dotIndexTerm = do
   dot
   asum [ Index <$> brackets expr
-       , Index . StrLit <$> field
+       , Index . StrLit <$> lexeme field
        ]
 
 -- TODO: Parse keywords.
@@ -120,7 +132,7 @@ string = quotes content
 --  +42
 --  jq: 1 compile error
 number :: Parser Scientific
-number = negative <*> scientific <?> "number"
+number = lexeme (negative <*> scientific <?> "number")
   where
     negative :: Parser (Scientific -> Scientific)
     negative = try (chunk "-" $> negate) <|> pure id

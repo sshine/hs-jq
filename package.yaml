@@ -11,6 +11,7 @@ extra-source-files:
 dependencies:
   - base
   - megaparsec
+  - parser-combinators
   - scientific
   - text
 

@@ -39,6 +39,7 @@ $ jq '.foo.bar'  <<< '{ "foo": { "bar": 42 } }' # syntax sugar for '.foo | .bar'
 type Ident = Text
 
 data Expr = Term !Term
+          | Pipe !Expr !Expr
           | As !Pattern
           | Obj ![ObjElem]
           | List ![Expr]
