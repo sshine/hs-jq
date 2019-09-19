@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 855e11a5be79431a8bc055a866a64271762b4400473aca8e94003e4b74fa634f
+-- hash: 754e295577674f2280cf872255d7de0587cf13d9fcc388e42ede4dfebf6b0663
 
 name:           jq
 version:        0.1.0
@@ -53,6 +53,7 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: test.hs
   other-modules:
+      Generators
       ParserTest
       Paths_jq
   hs-source-dirs:
