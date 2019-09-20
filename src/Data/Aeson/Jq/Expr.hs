@@ -49,14 +49,6 @@ data Expr = Term !Term
           | NullLit
           deriving (Eq, Show)
 
--- TODO: After asking Athas, I've decided to make two ASTs so that we can
--- represent the syntax tree exactly as it was parsed, i.e. distinguish
--- between the two: .foo and .["foo"], in one form of the tree, and in
--- another form make such syntax sugar unexpressable. The same goes for
--- .foo.bar -> .foo | .bar.
-
--- TODO: Find out why Var is a Term and not an Expr.
-
 data Term = Identity   -- .
           | Index !Expr -- .foo, .["foo"], .[1], .[.foo]
           | Var Ident

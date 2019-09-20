@@ -99,8 +99,6 @@ string = quotes content
     -- there are some discrepancies between what 'jq' supports and what is
     -- JSON according to https://www.json.org/ wrt. escape sequences:
     --
-    --  $ echo -e '"\n"' | jq .
-    -- parse error: Invalid string: control characters from U+0000 through U+001F must be escaped at line 2, column 1
     --
     -- From https://www.json.org/ it says:
     --
@@ -120,17 +118,6 @@ string = quotes content
     --     'u' hex hex hex hex
 
 
--- NOTE: The JSON specification only allows prefix '-', not prefix '+'.
--- 'jq' does not allow prefix '+' in its own expressions, but it does parse
--- prefix '+' in JSON. 'hs-jq' uses Aeson to parse JSON, and it does not
--- parse prefix '+'. This is a discrepancy between 'jq' and 'hs-jq'.
---
---  $ echo "+42" | jq .
---  42
---  $ echo "-42" | jq '+42'
---  jq: error: syntax error, unexpected '+', expecting $end (Unix shell quoting issues?) at <top-level>, line 1:
---  +42
---  jq: 1 compile error
 number :: Parser Scientific
 number = lexeme (negative <*> scientific <?> "number")
   where

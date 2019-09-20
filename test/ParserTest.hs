@@ -18,8 +18,6 @@ import           Test.Tasty.Hspec
 import           Data.Aeson.Jq.Expr
 import           Data.Aeson.Jq.Parser
 
--- TODO: Run all these: https://github.com/stedolan/jq/blob/master/tests/jq.test
-
 expr' :: Text -> Either (ParseErrorBundle Text Void) Expr
 expr' = parse expr ""
 
@@ -56,7 +54,6 @@ spec_Obj =
                           ]
     
 
--- TODO: Write property-based test
 spec_List :: Spec
 spec_List =
   describe "expr parses lists" $ do
@@ -97,8 +94,6 @@ spec_StrLit = do
     [r|"\t"|] `shouldParseAs` StrLit "\t" -- tab
 
 
-  -- TODO: Write a property test that tests 'u' hex hex hex hex.
-
   -- FIXME: The parser is too liberal wrt. characters
   describe "string literals with character literals U+0000 through U+001F" $
     it "should fail when they're not escaped" $
@@ -106,11 +101,6 @@ spec_StrLit = do
         parse expr "" `shouldFailOn` Text.pack [ '"', chr c, '"' ]
 
 -}
-
--- TODO: Write a property test that tests numbers.
--- TODO: Find out if 'jq' supports Data.Scientific.
--- TODO: Find out if Hedgehog can generate Data.Scientific.
--- TODO: Find out if Megaparsec's 'scientific' matches JSON's numbers.
 
 -- prop_NumLit :: Property
 -- prop_NumLit = undefined
