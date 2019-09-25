@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 754e295577674f2280cf872255d7de0587cf13d9fcc388e42ede4dfebf6b0663
+-- hash: 5db408fa46268ba595be17d71c5b4abde63ea15ad851d38e56ffdd0c9c47d238
 
 name:           jq
 version:        0.1.0
@@ -29,6 +29,7 @@ library
   build-depends:
       base
     , megaparsec
+    , mtl
     , parser-combinators
     , scientific
     , text
@@ -44,6 +45,7 @@ executable jq
   build-depends:
       base
     , megaparsec
+    , mtl
     , parser-combinators
     , scientific
     , text
@@ -66,6 +68,7 @@ test-suite test
     , hspec-megaparsec
     , jq
     , megaparsec
+    , mtl
     , parser-combinators
     , raw-strings-qq
     , scientific
@@ -90,6 +93,7 @@ benchmark bench
     , criterion
     , jq
     , megaparsec
+    , mtl
     , parser-combinators
     , scientific
     , text

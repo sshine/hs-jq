@@ -18,60 +18,100 @@ import           Test.Tasty.Hspec
 import           Data.Aeson.Jq.Expr
 import           Data.Aeson.Jq.Parser
 
-expr' :: Text -> Either (ParseErrorBundle Text Void) Expr
-expr' = parse expr ""
-
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
-  it (Text.unpack s) $ expr' s `shouldParse` e
+  it (Text.unpack s) $ parseExpr s `shouldParse` e
+
+spec_DotAndBracketIndexing :: Spec
+spec_DotAndBracketIndexing = do
+  describe "expr parses dot-indexing" $ do
+    ".foo[.bar + 1]" `shouldParseAs`
+      IndexAfter (DotField "foo")
+                 (Just (Plus (DotField "bar") (NumLit 1)))
+
+    ".foo.bar" `shouldParseAs`
+      DotFieldAfter (DotField "foo") "bar"
+
+    "{foo: 1}.foo" `shouldParseAs`
+      DotFieldAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ]) "foo"
+
+    [r|{foo: 1}."foo"|] `shouldParseAs`
+      DotStrAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ]) "foo"
+
+  describe "expr parses bracket-indexing" $ do
+    [r|{foo: 1}["foo"]|] `shouldParseAs`
+      IndexAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ])
+                 (Just (StrLit "foo"))
 
 spec_Pipe :: Spec
 spec_Pipe =
   describe "expr parses pipes" $ do
-    "1 | 2" `shouldParseAs` Pipe (NumLit 1) (NumLit 2)
-    ".foo | .bar" `shouldParseAs` Pipe (Term (Index (StrLit "foo")))
-                                       (Term (Index (StrLit "bar")))
-    "1 | 2 | 3" `shouldParseAs` Pipe (NumLit 1) (Pipe (NumLit 2) (NumLit 3))
-    "(1 | 2) | 3" `shouldParseAs` Pipe (Pipe (NumLit 1) (NumLit 2)) (NumLit 3)
+    "1 | 2" `shouldParseAs` Pipe one two
+    ".foo | .bar" `shouldParseAs`
+      Pipe (DotField "foo") (DotField "bar")
+    "1 | 2 | 3" `shouldParseAs`
+      Pipe one (Pipe two three)
+    "1 | (2 | 3)" `shouldParseAs`
+      Pipe one (Paren (Pipe two three))
+    "(1 | 2) | 3" `shouldParseAs`
+      Pipe (Paren (Pipe one two)) three
+  where
+    one = NumLit 1
+    two = NumLit 2
+    three = NumLit 3
 
 spec_Parentheses :: Spec
 spec_Parentheses =
   describe "expr parses parentheses" $ do
-    "(null)" `shouldParseAs` NullLit
-    "((null))" `shouldParseAs` NullLit
-    "([1, ([2, ((3))]), 4])"
-      `shouldParseAs` List [NumLit 1, List [NumLit 2, NumLit 3], NumLit 4]
+    "(null)" `shouldParseAs` Paren NullLit
+    "((null))" `shouldParseAs` Paren (Paren NullLit)
+    "([1, ([1, ((1))]), 1])"
+      `shouldParseAs`
+        Paren (List [one, Paren (List [one, Paren (Paren (one))]), one])
+  where
+    one = NumLit 1
 
 spec_Obj :: Spec
 spec_Obj =
   describe "expr parses simple objects" $ do
-    [r|{}|] `shouldParseAs` Obj []
-    [r|{"foo": 42}|] `shouldParseAs` Obj [ObjPair (StrLit "foo") (Just (NumLit 42))]
-    [r|{foo: 42}|] `shouldParseAs` Obj [ObjPair (StrLit "foo") (Just (NumLit 42))]
+    "{}" `shouldParseAs` Obj []
+
+    [r|{"foo": 42}|] `shouldParseAs`
+      Obj [(FieldExpr (StrLit "foo"), Just (NumLit 42))]
+
+    "{foo: 42}" `shouldParseAs`
+      Obj [(FieldKey "foo", Just (NumLit 42))]
+
     [r|{"foo": 1, "bar": 2}|]
-      `shouldParseAs` Obj [ ObjPair (StrLit "foo") (Just (NumLit 1))
-                          , ObjPair (StrLit "bar") (Just (NumLit 2))
-                          ]
-    
+      `shouldParseAs`
+        Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1))
+            , (FieldExpr (StrLit "bar"), Just (NumLit 2))
+            ]
+
+    "{foo: 1, bar: 2}"
+      `shouldParseAs`
+        Obj [ (FieldKey "foo", Just (NumLit 1))
+            , (FieldKey "bar", Just (NumLit 2))
+            ]
 
 spec_List :: Spec
 spec_List =
   describe "expr parses lists" $ do
-    [r|[]|]               `shouldParseAs` List []
-    [r|[1,2,3]|]          `shouldParseAs` List [NumLit 1, NumLit 2, NumLit 3]
-    [r|[true,false,null]|] `shouldParseAs` List [BoolLit True, BoolLit False, NullLit]
-    [r|[[], true, [false, [], [null]]]|]
+    "[]"                `shouldParseAs` List []
+    "[1,2,3]"           `shouldParseAs` List [NumLit 1, NumLit 2, NumLit 3]
+    "[true,false,null]" `shouldParseAs` List [BoolLit True, BoolLit False, NullLit]
+    "[[], true, [false, [], [null]]]"
       `shouldParseAs`
         List [ List []
-                , BoolLit True
-                , List [ BoolLit False
-                          , List []
-                          , List [NullLit]]]
+             , BoolLit True
+             , List [ BoolLit False
+                    , List []
+                    , List [NullLit]] ]
 
 spec_Var :: Spec
 spec_Var =
   describe "$vars" $
-    "$foo" `shouldParseAs` Term (Var "foo")
+    "$foo" `shouldParseAs` Var "foo"
 
 spec_StrLit :: Spec
 spec_StrLit = do
@@ -115,7 +155,7 @@ spec_NumLit = do
     "1e100" `shouldParseAs` NumLit 1e100
 
   describe "expr does not parse" $
-    it "\"+42\"" $ expr' `shouldFailOn` "+42"
+    it "\"+42\"" $ parseExpr `shouldFailOn` "+42"
 
 spec_BoolLit_NullLit :: Spec
 spec_BoolLit_NullLit =

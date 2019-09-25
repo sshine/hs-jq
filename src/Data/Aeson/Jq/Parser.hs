@@ -1,9 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.Aeson.Jq.Parser
-  ( expr
+  ( parseExpr
+  , expr
   ) where
 
+import           Control.Applicative
+import           Control.Monad (void)
+import           Control.Monad.Reader
 import           Data.Char (isLetter, isAscii, isDigit)
 import           Data.Maybe (fromMaybe)
 import           Data.Scientific (Scientific)
@@ -12,7 +17,6 @@ import           Data.Text (Text)
 import           Data.Foldable (asum)
 import           Data.Functor (($>))
 import           Data.Void
-import           Control.Monad (void)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char (space)
 import           Text.Megaparsec.Char.Lexer (scientific)
@@ -20,63 +24,76 @@ import           Control.Monad.Combinators.Expr
 
 import           Data.Aeson.Jq.Expr
 
-type Parser = Parsec Void Text
+parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
+parseExpr = parse (runReaderT (runParser1 expr) initialEnv ) ""
 
-expr :: Parser Expr
-expr = asum [ funcDef, exprOp ]
+newtype Parser a = Parser { runParser1 :: ReaderT JqParserEnv (Parsec Void Text) a }
+  deriving ( Functor, Applicative, Alternative, Monad, MonadPlus
+           , MonadReader JqParserEnv
+           , MonadParsec Void Text
+           )
+
+data JqParserEnv = JqParserEnv
+  { envAllowComma :: !Bool
+  }
+
+initialEnv :: JqParserEnv
+initialEnv = JqParserEnv True
+
+withoutComma, withComma :: Parser a -> Parser a
+withoutComma = local (\env -> env { envAllowComma = False })
+withComma = local (\env -> env { envAllowComma = True })
 
 -- TODO: Find out if higher up means lower precedence (assumption now)
 -- TODO: Find out where to place try-catch in parser.
-exprOp :: Parser Expr
-exprOp = makeExprParser term
-  [ [ InfixR (Pipe              <$ sym "|") ]
-  , [ InfixL (Comma             <$ sym ",") ]
-  , [ InfixR (Alternative       <$ sym "//") ]
-  , [ InfixN (Assign            <$ sym "=")
-    , InfixN (UpdateAssign      <$ sym "|=")
-    , InfixN (PlusAssign        <$ sym "+=")
-    , InfixN (MinusAssign       <$ sym "-=")
-    , InfixN (MultAssign        <$ sym "*=")
-    , InfixN (DivAssign         <$ sym "/=")
-    , InfixN (ModAssign         <$ sym "%=")
-    , InfixN (AlternativeAssign <$ sym "//=")
-    ]
-  , [ InfixL (Or <$ sym "or") ]
-  , [ InfixL (And <$ sym "and") ]
-  , [ InfixN (Eq <$ sym "==")
-    , InfixN (Neq <$ sym "!=")
-    , InfixN (Leq <$ sym "<=")
-    , InfixN (Geq <$ sym ">=")
-    , InfixN (Lt <$ sym "<")
-    , InfixN (Gt <$ sym ">")
-    ]
-  , [ InfixL (Plus <$ sym "+")
-    , InfixL (Minus <$ sym "-")
-    ]
-  , [ InfixL (Mult <$ sym "*")
-    , InfixL (Div <$ sym "/")
-    , InfixL (Mod <$ sym "%")
-    ]
-  ]
-
--- TODO: Find out if ':' and ',' actually have higher precedence than all others??
---
--- If not, this part of the parser needs to be restructured in some way where the
--- operator overlap between ExpH (all expressions) and Exp (expressions that can
--- go inside a dictionary literal, i.e. what JBOL grammar calls ExpD.)
+expr :: Parser Expr
+expr = do
+  allowComma <- asks envAllowComma
+  makeExprParser term (
+    [ [ InfixR (Pipe  <$ sym "|") ] ]
+    ++ (if allowComma
+        then [ [ InfixL (Comma <$ sym ",") ] ]
+        else []) ++
+    [ [ InfixR (Alternative       <$ sym "//") ]
+    , [ InfixN (Assign            <$ sym "=")
+      , InfixN (UpdateAssign      <$ sym "|=")
+      , InfixN (PlusAssign        <$ sym "+=")
+      , InfixN (MinusAssign       <$ sym "-=")
+      , InfixN (MultAssign        <$ sym "*=")
+      , InfixN (DivAssign         <$ sym "/=")
+      , InfixN (ModAssign         <$ sym "%=")
+      , InfixN (AlternativeAssign <$ sym "//=")
+      ]
+    , [ InfixL (Or    <$ sym "or") ]
+    , [ InfixL (And   <$ sym "and") ]
+    , [ InfixN (Eq    <$ sym "==")
+      , InfixN (Neq   <$ sym "!=")
+      , InfixN (Leq   <$ sym "<=")
+      , InfixN (Geq   <$ sym ">=")
+      , InfixN (Lt    <$ sym "<")
+      , InfixN (Gt    <$ sym ">")
+      ]
+    , [ InfixL (Plus  <$ sym "+")
+      , InfixL (Minus <$ sym "-")
+      ]
+    , [ InfixL (Mult  <$ sym "*")
+      , InfixL (Div   <$ sym "/")
+      , InfixL (Mod   <$ sym "%")
+      ]
+    ])
 
 -- Note: The purpose of 'Term' vs. 'Exp' seems to be to separate the binary operators
 -- (CFG non-terminals) from the unary operators (CFG terminals). This distinction is
 -- only preserved in the parser combinator names; the AST has just Exp (and ExpH).
 term :: Parser Expr
 term = asum
-  [ Obj     <$> obj
-  , List    <$> list
+  [ Obj     <$> withoutComma obj
+  , List    <$> withoutComma list
   , StrLit  <$> string
   , NumLit  <$> number
   , BoolLit <$> bool
   , NullLit <$ sym "null"
-  , Paren   <$> parens expr
+  , Paren   <$> parens (withComma expr)
   , dotExpr
   , Var     <$> var
   ]
@@ -90,6 +107,8 @@ dotExpr = do
        , RecursiveDescent <$ dot
        , pure Identity
        ]
+  -- TODO: Extend parser to handle failing tests for 'e.foo', 'e[e]'.
+  -- TODO: Extend parser to handle other suffixes 'e[e]' and 'e?'.
 
 funcDef :: Parser Expr
 funcDef =
@@ -125,7 +144,7 @@ fieldK = label "field" $
     isFieldChar c = isFieldFirstChar c || isDigit c
 
 obj :: Parser [(ObjKey, Maybe Expr)]
-obj = objElem `sepBy` sym ","
+obj = braces (objElem `sepBy` sym ",")
 
 objElem :: Parser (ObjKey, Maybe Expr)
 objElem = (,) <$> key <*> value
@@ -187,6 +206,9 @@ parens = between (sym "(") (sym ")")
 
 brackets :: Parser a -> Parser a
 brackets = between (sym "[") (sym "]")
+
+braces :: Parser a -> Parser a
+braces = between (sym "{") (sym "}")
 
 sym :: Text -> Parser ()
 sym = lexeme . void . chunk
