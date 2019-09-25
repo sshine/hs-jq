@@ -36,7 +36,7 @@ Why?
 
 ## Status
 
-Conceptual.
+Only a half-done parser exists.
 
 ## Contributing
 
