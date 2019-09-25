@@ -3,7 +3,17 @@
 The purpose of this project is to create a competing implementation of
 [`jq`][1], the command-line JSON processor.
 
-Why?
+## Check it out
+
+There is currently no executable. To see the tests that pass you can:
+
+```
+$ git clone https://github.com/sshine/hs-jq.git
+$ cd hs-jq
+$ stack test
+```
+
+## Why?
 
  - I think `jq` is a really cool domain-specific language, but I'm really bad
    at it.
