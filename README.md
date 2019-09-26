@@ -52,10 +52,7 @@ Only a half-done parser exists.
 
 If you like this project, or if you're looking for an opportunity to
 practice writing open source Haskell, feel free to open an issue or a PR, or
-send me an email. Since the project is still very early stage, it is probably
-best to begin with an issue or an email just so that nobody steps on nobody's
-toes. I will be creating some issues soon to mark areas that I'm not actively
-working on.
+send me an email. A good start would be an issue labelled "[help wanted][9]".
 
 [1]: https://github.com/stedolan/jq
 [2]: http://hackage.haskell.org/package/hedgehog
@@ -65,3 +62,4 @@ working on.
 [6]: https://github.com/haskell-works/hw-jq
 [7]: https://github.com/fadado/JBOL
 [8]: https://github.com/fadado/JBOL/blob/master/doc/JQ-language-grammar.md
+[9]: https://github.com/sshine/hs-jq/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22
