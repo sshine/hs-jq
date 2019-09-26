@@ -5,8 +5,10 @@ module ParserTest where
 
 import           Data.Char (chr)
 import           Data.Foldable (for_)
+import           Data.Maybe
 import qualified Data.Text as Text
 import           Data.Text (Text)
+import           Data.Text.Encoding (decodeUtf8)
 import           Data.Void
 
 import           Hedgehog hiding (Var)
@@ -14,9 +16,12 @@ import           Test.Hspec.Megaparsec
 import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
 import           Test.Tasty.Hspec
+import           Test.Tasty.Hedgehog
 
-import           Jq.Expr
-import           Jq.Parser
+import           Data.Aeson (encode)
+import           Data.Aeson.Jq.Expr
+import           Data.Aeson.Jq.Parser
+import           Generators
 
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
@@ -159,8 +164,18 @@ spec_StrLit = do
 
 -}
 
--- prop_NumLit :: Property
--- prop_NumLit = undefined
+hprop_NumLit :: Property
+hprop_NumLit = property $ do
+  genNum <- forAll $ numberGen
+
+  let strippedNum = fromMaybe genNum
+                  $ Text.stripSuffix "..." genNum
+  let roundTrip (NumLit n) = strippedNum === (decordUtf8 $ encode n)
+
+  either
+    (\_ -> failure)
+    roundTrip
+    (parseExpr genNum)
 
 spec_NumLit :: Spec
 spec_NumLit = do
