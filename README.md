@@ -52,7 +52,8 @@ Only a half-done parser exists.
 
 If you like this project, or if you're looking for an opportunity to
 practice writing open source Haskell, feel free to open an issue or a PR, or
-send me an email. A good start would be an issue labelled "[help wanted][9]".
+send me an email. A good starting point could be to look through issues
+labelled "[help wanted][9]".
 
 [1]: https://github.com/stedolan/jq
 [2]: http://hackage.haskell.org/package/hedgehog
