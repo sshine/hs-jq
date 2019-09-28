@@ -25,23 +25,36 @@ shouldParseAs s e =
 spec_DotAndBracketIndexing :: Spec
 spec_DotAndBracketIndexing = do
   describe "expr parses dot-indexing" $ do
-    ".foo[.bar + 1]" `shouldParseAs`
-      IndexAfter (DotField "foo")
-                 (Just (Plus (DotField "bar") (NumLit 1)))
-
     ".foo.bar" `shouldParseAs`
       DotFieldAfter (DotField "foo") "bar"
 
     "{foo: 1}.foo" `shouldParseAs`
-      DotFieldAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ]) "foo"
+      DotFieldAfter objFoo "foo"
 
     [r|{foo: 1}."foo"|] `shouldParseAs`
-      DotStrAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ]) "foo"
+      DotStrAfter objFoo "foo"
+
+  describe "expr parses the value iterator" $ do
+    ".[]" `shouldParseAs` ValueIterator Identity
+    ".foo[]" `shouldParseAs` ValueIterator (DotField "foo")
+    "[1,2,3][]" `shouldParseAs` ValueIterator (List [NumLit 1, NumLit 2, NumLit 3])
+    ".[][]" `shouldParseAs` ValueIterator (ValueIterator Identity)
 
   describe "expr parses bracket-indexing" $ do
+    ".[0]" `shouldParseAs` IndexAfter Identity (NumLit 0)
+    ".[:]" `shouldParseAs` IndexRangeAfter Identity Nothing Nothing
+    ".[0:]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) Nothing
+    ".[:0]" `shouldParseAs` IndexRangeAfter Identity Nothing (Just (NumLit 0))
+    ".[0:9]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) (Just (NumLit 9))
+
     [r|{foo: 1}["foo"]|] `shouldParseAs`
-      IndexAfter (Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1)) ])
-                 (Just (StrLit "foo"))
+      IndexAfter objFoo (StrLit "foo")
+
+    ".foo[.bar + 1]" `shouldParseAs`
+      IndexAfter (DotField "foo") (Plus (DotField "bar") (NumLit 1))
+
+  where
+    objFoo = Obj [ (FieldKey "foo", Just (NumLit 1)) ]
 
 spec_Pipe :: Spec
 spec_Pipe =
@@ -149,9 +162,9 @@ spec_NumLit :: Spec
 spec_NumLit = do
   describe "expr parses" $ do
     "0"     `shouldParseAs` NumLit 0
-    "-1"    `shouldParseAs` NumLit (-1)
+    "-1"    `shouldParseAs` Neg (NumLit 1)
     "2.5"   `shouldParseAs` NumLit 2.5
-    "-2.5"  `shouldParseAs` NumLit (-2.5)
+    "-2.5"  `shouldParseAs` Neg (NumLit (2.5))
     "1e100" `shouldParseAs` NumLit 1e100
 
   describe "expr does not parse" $

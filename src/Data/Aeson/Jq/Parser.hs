@@ -25,9 +25,10 @@ import           Control.Monad.Combinators.Expr
 import           Data.Aeson.Jq.Expr
 
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
-parseExpr = parse (runReaderT (runParser1 expr) initialEnv ) ""
+parseExpr = parse (runReaderT (runParser1 expr) initialEnv) ""
 
-newtype Parser a = Parser { runParser1 :: ReaderT JqParserEnv (Parsec Void Text) a }
+newtype Parser a =
+  Parser { runParser1 :: ReaderT JqParserEnv (Parsec Void Text) a }
   deriving ( Functor, Applicative, Alternative, Monad, MonadPlus
            , MonadReader JqParserEnv
            , MonadParsec Void Text
@@ -44,15 +45,17 @@ withoutComma, withComma :: Parser a -> Parser a
 withoutComma = local (\env -> env { envAllowComma = False })
 withComma = local (\env -> env { envAllowComma = True })
 
--- TODO: Find out if higher up means lower precedence (assumption now)
--- TODO: Find out where to place try-catch in parser.
 expr :: Parser Expr
-expr = do
+expr = exprOp
+
+exprOp :: Parser Expr
+exprOp = do
   allowComma <- asks envAllowComma
   makeExprParser term (
-    [ [ InfixR (Pipe  <$ sym "|") ] ]
+    [ [ Prefix (Neg   <$ sym "-") ]
+    , [ InfixR (Pipe  <$ sym "|") ] ]
     ++ (if allowComma
-        then [ [ InfixL (Comma <$ sym ",") ] ]
+        then [ [ InfixL (Comma    <$ sym ",") ] ]
         else []) ++
     [ [ InfixR (Alternative       <$ sym "//") ]
     , [ InfixN (Assign            <$ sym "=")
@@ -87,28 +90,42 @@ expr = do
 -- only preserved in the parser combinator names; the AST has just Exp (and ExpH).
 term :: Parser Expr
 term = asum
-  [ Obj     <$> withoutComma obj
-  , List    <$> withoutComma list
+  [ Obj     <$> obj
+  , List    <$> list
   , StrLit  <$> string
   , NumLit  <$> number
   , BoolLit <$> bool
   , NullLit <$ sym "null"
-  , Paren   <$> parens (withComma expr)
-  , dotExpr
+  , Paren   <$> parens expr
   , Var     <$> var
-  ]
+  , dotExpr
+  ] >>= suffix
 
 dotExpr :: Parser Expr
 dotExpr = do
   dot
-  asum [ DotExpr          <$> brackets expr
-       , DotStr           <$> string
+  asum [ DotStr           <$> string
        , DotField         <$> lexeme field
        , RecursiveDescent <$ dot
        , pure Identity
        ]
-  -- TODO: Extend parser to handle failing tests for 'e.foo', 'e[e]'.
-  -- TODO: Extend parser to handle other suffixes 'e[e]' and 'e?'.
+
+suffix :: Expr -> Parser Expr
+suffix e = dotAfter <|> bracketAfter <|> pure e
+  where
+    dotAfter = dot *> asum
+      [ DotFieldAfter e <$> lexeme field
+      , DotStrAfter e   <$> string
+      ]
+
+    -- i, j :: Maybe Expr
+    bracketAfter = brackets $ asum
+      [ IndexRangeAfter e Nothing <$> colon (optional expr)      -- e[:], e[:j]
+      , expr >>= \i -> asum
+          [ IndexRangeAfter e (Just i) <$> colon (optional expr) -- e[i:], e[i:j]
+          , pure (IndexAfter e i) ]                              -- e[i]
+      , pure (ValueIterator e)                                   -- e[]
+      ]
 
 funcDef :: Parser Expr
 funcDef =
@@ -154,7 +171,7 @@ objElem = (,) <$> key <*> value
     value = optional (sym ":" *> expr)
 
 list :: Parser [Expr]
-list = between (sym "[") (sym "]") (expr `sepBy` sym ",")
+list = brackets (expr `sepBy` sym ",")
 
 var :: Parser Text
 var = chunk "$" *> field
@@ -188,10 +205,7 @@ string = between (sym "\"") (sym "\"") content
 
 
 number :: Parser Scientific
-number = lexeme (negative <*> scientific <?> "number")
-  where
-    negative :: Parser (Scientific -> Scientific)
-    negative = try (chunk "-" $> negate) <|> pure id
+number = lexeme (scientific <?> "number")
 
 bool :: Parser Bool
 bool = asum [ sym "true" $> True
@@ -199,16 +213,19 @@ bool = asum [ sym "true" $> True
             ]
 
 dot :: Parser ()
-dot = sym "." <?> "dot"
+dot = void (chunk ".") <?> "dot"
+
+colon :: Parser a -> Parser a
+colon p = sym ":" *> p
 
 parens :: Parser a -> Parser a
-parens = between (sym "(") (sym ")")
+parens = between (sym "(") (sym ")") . withComma
 
 brackets :: Parser a -> Parser a
-brackets = between (sym "[") (sym "]")
+brackets = between (sym "[") (sym "]") . withoutComma
 
 braces :: Parser a -> Parser a
-braces = between (sym "{") (sym "}")
+braces = between (sym "{") (sym "}") . withoutComma
 
 sym :: Text -> Parser ()
 sym = lexeme . void . chunk

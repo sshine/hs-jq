@@ -73,20 +73,21 @@ data Expr
     | RecursiveDescent               -- '..'
     | DotField !Ident                -- '.foo'
     | DotStr !Text                   -- '."foo"'
-    | DotExpr !Expr                  -- '.[e]'
 
-      -- Postfix indexing with . and []
-    | IndexAfter !Expr !(Maybe Expr) -- 'x[y]'
+      -- Postfix [], postfix indexing with . and []
+    | ValueIterator !Expr            -- '[]'
+    | IndexAfter !Expr !Expr         -- 'e[y]'
     | IndexRangeAfter !Expr !(Maybe Expr) !(Maybe Expr)
                                      -- postfix 'e[x:y]', 'e[x:]', 'e[:y]', 'e[:]'
-    | DotFieldAfter !Expr !Ident     -- suffix '.foo'
+    | DotFieldAfter !Expr !Ident     -- suffix 'e.foo'
     | DotStrAfter !Expr !Text        -- suffix '."foo"'
  -- | DotExp !Exp !Exp               -- suffix '.[e]' not supported by jq,
                                      --   e.g. jq -n '{"foo":42}.["foo"]'
+                                     --   instead: '{"foo":42}["foo"]'
 
       -- Literals, variables
     | Var Ident                      -- '$var' ([a-zA-Z_][a-zA-Z_0-9]*::)*[a-zA-Z_][a-zA-Z_0-9]*
-    | Obj ![(ObjKey, Maybe Expr)]      -- This is what JBOL's grammar calls MkDictPair
+    | Obj ![(ObjKey, Maybe Expr)]    -- This is what JBOL's grammar calls MkDictPair
     | List ![Expr]
     | StrLit !Text
     | NumLit !Scientific
