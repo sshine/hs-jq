@@ -19,13 +19,17 @@ import qualified Hedgehog.Range as Range
 -- First, an unsized Gen of JSON numbers.
 
 numberGen :: Gen Text
-numberGen = sign <> integer <> commaPart
+numberGen = sign <> integer
   where
     sign = Gen.element ["", "-"]
     integer = Text.singleton <$> Gen.element ['0'..'9']
-    commaPart = Gen.element [ "..." ]
+
 
 -- Second, a sized one.
 
 sizedNumberGen :: Gen Text
 sizedNumberGen = undefined
+
+-- Third, a scientific notation
+scientificNumberGen :: Gen Text
+scientificNumberGen = undefined
