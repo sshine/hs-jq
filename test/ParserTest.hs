@@ -165,12 +165,18 @@ spec_StrLit = do
 hprop_NumLit :: Property
 hprop_NumLit = property $ do
   genNum <- forAll $ numberGen
-  let parsed = parseExpr genNum
-  case parsed of
-    Left _ -> failure
-    Right jqNum -> case fmap NumLit (readMaybe $ Text.unpack genNum) of
-                    Nothing -> failure
-                    Just haskNum -> jqNum === haskNum
+
+  let nums = do
+        jqNum <- eTm $ parseExpr genNum
+        haskNum <- fmap NumLit (readMaybe $ Text.unpack genNum)
+        pure (jqNum, haskNum)
+
+  case nums of
+    Nothing -> failure
+    Just (j,h) -> j === h
+  where
+    eTm = either (const Nothing) Just
+
 
 spec_NumLit :: Spec
 spec_NumLit = do
