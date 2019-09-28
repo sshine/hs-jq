@@ -163,7 +163,7 @@ spec_StrLit = do
 
 hprop_NumLit :: Property
 hprop_NumLit = property $ do
-  genNum <- forAll $ numberGen
+  genNum <- forAll $ jsonNumberGen
 
   let nums = do
         jqNum <- eTm $ parseExpr genNum
@@ -175,7 +175,6 @@ hprop_NumLit = property $ do
     Just (j,h) -> j === h
   where
     eTm = either (const Nothing) Just
-
 
 spec_NumLit :: Spec
 spec_NumLit = do
