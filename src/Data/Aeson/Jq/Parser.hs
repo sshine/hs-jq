@@ -85,9 +85,6 @@ exprOp = do
       ]
     ])
 
--- Note: The purpose of 'Term' vs. 'Exp' seems to be to separate the binary operators
--- (CFG non-terminals) from the unary operators (CFG terminals). This distinction is
--- only preserved in the parser combinator names; the AST has just Exp (and ExpH).
 term :: Parser Expr
 term = asum
   [ Obj     <$> obj
@@ -110,6 +107,27 @@ dotExpr = do
        , pure Identity
        ]
 
+
+{-
+-- TODO: Currently, suffix isn't called recursively.
+-- TODO: The following jq expressions are not yet supported:
+
+$ jq -n -c '[3,6,9,12][0,2]'
+3
+9
+
+$ jq -n -c '[3,6,9,12][0:1,2,3]'
+[3]
+[3,6]
+[3,6,9]
+
+$ jq -n -c '[3,6,9,12][0,1:2,3]'
+[3,6]
+[3,6,9]
+[6]
+[6,9]
+
+-}
 suffix :: Expr -> Parser Expr
 suffix e = dotAfter <|> bracketAfter <|> pure e
   where

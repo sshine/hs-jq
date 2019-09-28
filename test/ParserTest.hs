@@ -38,7 +38,6 @@ spec_DotAndBracketIndexing = do
     ".[]" `shouldParseAs` ValueIterator Identity
     ".foo[]" `shouldParseAs` ValueIterator (DotField "foo")
     "[1,2,3][]" `shouldParseAs` ValueIterator (List [NumLit 1, NumLit 2, NumLit 3])
-    ".[][]" `shouldParseAs` ValueIterator (ValueIterator Identity)
 
   describe "expr parses bracket-indexing" $ do
     ".[0]" `shouldParseAs` IndexAfter Identity (NumLit 0)
@@ -52,6 +51,11 @@ spec_DotAndBracketIndexing = do
 
     ".foo[.bar + 1]" `shouldParseAs`
       IndexAfter (DotField "foo") (Plus (DotField "bar") (NumLit 1))
+
+  describe "expr parses multiple suffixes" $ do
+    ".[][]" `shouldParseAs` ValueIterator (ValueIterator Identity)
+    ".[][][]" `shouldParseAs` ValueIterator (ValueIterator (ValueIterator Identity))
+    ".foo.bar.baz" `shouldParseAs` DotFieldAfter (DotFieldAfter (DotField "foo") "bar") "baz"
 
   where
     objFoo = Obj [ (FieldKey "foo", Just (NumLit 1)) ]
