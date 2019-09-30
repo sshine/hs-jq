@@ -21,9 +21,9 @@ default-extensions:
 
 library:
   exposed-modules:
-    - Data.Aeson.Jq
-    - Data.Aeson.Jq.Expr
-    - Data.Aeson.Jq.Parser
+    - Jq
+    - Jq.Expr
+    - Jq.Parser
   source-dirs: src
 
 executables:

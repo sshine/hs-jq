@@ -1,5 +1,5 @@
 
-module Data.Aeson.Jq.Expr where
+module Jq.Expr where
 
 import Data.Scientific (Scientific)
 import Data.Text (Text)

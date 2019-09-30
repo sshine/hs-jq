@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Data.Aeson.Jq.Parser
+module Jq.Parser
   ( parseExpr
   , expr
   ) where
@@ -22,7 +22,7 @@ import           Text.Megaparsec.Char (space)
 import           Text.Megaparsec.Char.Lexer (scientific)
 import           Control.Monad.Combinators.Expr
 
-import           Data.Aeson.Jq.Expr
+import           Jq.Expr
 
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
 parseExpr = parse (runReaderT (runParser1 expr) initialEnv) ""

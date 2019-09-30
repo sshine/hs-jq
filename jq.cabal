@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5db408fa46268ba595be17d71c5b4abde63ea15ad851d38e56ffdd0c9c47d238
+-- hash: 584a4e7a23af0f616677866d26e722fb533ef731298ae4039b03067f259749e6
 
 name:           jq
 version:        0.1.0
@@ -18,9 +18,9 @@ extra-source-files:
 
 library
   exposed-modules:
-      Data.Aeson.Jq
-      Data.Aeson.Jq.Expr
-      Data.Aeson.Jq.Parser
+      Jq
+      Jq.Expr
+      Jq.Parser
   other-modules:
       Paths_jq
   hs-source-dirs:

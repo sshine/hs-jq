@@ -15,8 +15,8 @@ import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
 import           Test.Tasty.Hspec
 
-import           Data.Aeson.Jq.Expr
-import           Data.Aeson.Jq.Parser
+import           Jq.Expr
+import           Jq.Parser
 
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
