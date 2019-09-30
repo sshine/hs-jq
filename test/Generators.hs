@@ -15,27 +15,48 @@ import qualified Hedgehog.Range as Range
 
 -- DISCREPANCY: 'jq' allows both 000 in input and its own number literals,
 -- but JSON spec does not. We'll stay closest to 'jq' by doing this, too.
+--
 
-integer :: Integer -> Gen Text
-integer limit = Text.pack . show <$>
-      (Gen.integral $ Range.constant 0 limit)
+-- | Helper Generators
+signGen :: Gen Text
+signGen = Gen.element ["+", "-", ""]
 
--- First, an unsized Gen of JSON numbers.
+signGen' :: Gen Text
+signGen' = Gen.element ["-", ""]
 
+integerGen :: Gen Text
+integerGen = Text.pack . show <$>
+      (Gen.integral $ Range.exponential 1 (10^309))
+
+expGen :: Gen Text
+expGen = Text.pack . show <$>
+  (Gen.integral (Range.linearFrom 0 (-10^16) (10^16)))
+
+decBefore :: Gen Text
+decBefore = Gen.constant "." <> integerGen
+
+decAfter :: Gen Text
+decAfter = integerGen <> Gen.constant "."
+
+-- | Number type generators
 numberGen :: Gen Text
-numberGen = sign <> number
-  where
-    sign = Gen.element ["", "-"]
-    number = integer $ 2^52
+numberGen = signGen' <> integerGen
 
--- Second, a scientific notation
 scientificNumberGen :: Gen Text
-scientificNumberGen = base <> e <> exponent
+scientificNumberGen = base <> e <> signGen <> expGen
   where
     base = Text.singleton <$> Gen.element ['0'..'9']
-    e = Gen.constant "e"
-    exponent = integer $ 10^15
+    e = Gen.element ["e", "E"]
 
+fractionalGen :: Gen Text
+fractionalGen = integerGen <> Gen.constant "." <> integerGen
+
+optFractionalGen :: Gen Text
+optFractionalGen = signGen' <> Gen.choice [decBefore, decAfter]
 
 jsonNumberGen :: Gen Text
-jsonNumberGen = Gen.choice [numberGen, scientificNumberGen]
+jsonNumberGen =
+  Gen.choice [ numberGen
+             , scientificNumberGen
+             , fractionalGen
+             , optFractionalGen ]
