@@ -170,6 +170,11 @@ spec_NumLit = do
     "2.5"   `shouldParseAs` NumLit 2.5
     "-2.5"  `shouldParseAs` Neg (NumLit (2.5))
     "1e100" `shouldParseAs` NumLit 1e100
+    "-.1"   `shouldParseAs` NumLit (-0.1)
+
+  describe "number" $
+    it "parses .1" $
+      parse' number ".1" `shouldBe` Right 0.1
 
   describe "expr does not parse" $
     it "\"+42\"" $ parseExpr `shouldFailOn` "+42"

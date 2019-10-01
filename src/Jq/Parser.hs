@@ -1,10 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Jq.Parser
-  ( parseExpr
-  , expr
-  ) where
+module Jq.Parser where
 
 import           Control.Applicative
 import           Control.Monad (void)
@@ -24,8 +21,11 @@ import           Control.Monad.Combinators.Expr
 
 import           Jq.Expr
 
+parse' :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
+parse' p = parse (runReaderT (runParser1 p) initialEnv) ""
+
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
-parseExpr = parse (runReaderT (runParser1 expr) initialEnv) ""
+parseExpr = parse' expr
 
 newtype Parser a =
   Parser { runParser1 :: ReaderT JqParserEnv (Parsec Void Text) a }
