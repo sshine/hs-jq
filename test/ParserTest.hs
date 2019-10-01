@@ -168,13 +168,21 @@ spec_NumLit = do
     "0"     `shouldParseAs` NumLit 0
     "-1"    `shouldParseAs` Neg (NumLit 1)
     "2.5"   `shouldParseAs` NumLit 2.5
-    "-2.5"  `shouldParseAs` Neg (NumLit (2.5))
+    "-2.5"  `shouldParseAs` Neg (NumLit 2.5)
     "1e100" `shouldParseAs` NumLit 1e100
-    "-.1"   `shouldParseAs` NumLit (-0.1)
+    ".1"    `shouldParseAs` NumLit 0.1
 
+    -- FIXME: Only one of these is true. In resolving the parser bug with
+    -- prefix '-', pick the one that is most convenient. It's probably the
+    -- latter.
+    "-.1"   `shouldParseAs` NumLit (-0.1)
+    "-.1"   `shouldParseAs` Neg (NumLit 0.1)
+
+  -- FIXME: When the parser bug with prefix '-' is avoided, this unit test
+  -- can be removed in favor of one that addresses 'parseExpr' directly.
   describe "number" $
     it "parses .1" $
-      parse' number ".1" `shouldBe` Right 0.1
+      parse' number ".1" `shouldParse` 0.1
 
   describe "expr does not parse" $
     it "\"+42\"" $ parseExpr `shouldFailOn` "+42"
