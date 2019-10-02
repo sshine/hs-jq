@@ -16,8 +16,8 @@ import           Text.RawString.QQ
 import           Text.Read
 import           Test.Tasty.Hspec
 
-import           Data.Aeson.Jq.Expr
-import           Data.Aeson.Jq.Parser
+import           Jq.Expr
+import           Jq.Parser
 import           Generators
 
 shouldParseAs :: Text -> Expr -> Spec

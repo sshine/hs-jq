@@ -28,9 +28,6 @@ integerGen :: Gen Text
 integerGen = Text.pack . show <$>
       (Gen.integral $ Range.exponential 1 (10^309))
 
-expGen :: Gen Text
-expGen = Text.pack . show <$>
-  (Gen.integral (Range.linearFrom 0 (-10^16) (10^16)))
 
 decBefore :: Gen Text
 decBefore = Gen.constant "." <> integerGen
@@ -45,8 +42,10 @@ numberGen = signGen' <> integerGen
 scientificNumberGen :: Gen Text
 scientificNumberGen = base <> e <> signGen <> expGen
   where
-    base = Text.singleton <$> Gen.element ['0'..'9']
+    base = Gen.choice [numberGen, fractionalGen]
     e = Gen.element ["e", "E"]
+    expGen = Text.pack . show <$>
+      (Gen.integral (Range.linearFrom 0 (-10^16) (10^16)))
 
 fractionalGen :: Gen Text
 fractionalGen = integerGen <> Gen.constant "." <> integerGen
