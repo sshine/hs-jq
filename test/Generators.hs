@@ -19,10 +19,10 @@ import qualified Hedgehog.Range as Range
 
 -- | Helper Generators
 signGen :: Gen Text
-signGen = Gen.element ["+", "-", ""]
+signGen = Gen.element ["", "+", "-"]
 
 signGen' :: Gen Text
-signGen' = Gen.element ["-", ""]
+signGen' = Gen.element ["", "-"]
 
 integerGen :: Gen Text
 integerGen = Text.pack . show <$>
@@ -42,13 +42,13 @@ numberGen = signGen' <> integerGen
 scientificNumberGen :: Gen Text
 scientificNumberGen = base <> e <> signGen <> expGen
   where
-    base = Gen.choice [numberGen, fractionalGen]
+    base = Gen.choice [numberGen, fractionalGen, optFractionalGen]
     e = Gen.element ["e", "E"]
     expGen = Text.pack . show <$>
       (Gen.integral (Range.linearFrom 0 (-10^16) (10^16)))
 
 fractionalGen :: Gen Text
-fractionalGen = integerGen <> Gen.constant "." <> integerGen
+fractionalGen = signGen' <> integerGen <> Gen.constant "." <> integerGen
 
 optFractionalGen :: Gen Text
 optFractionalGen = signGen' <> Gen.choice [decBefore, decAfter]
