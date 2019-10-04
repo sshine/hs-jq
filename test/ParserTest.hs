@@ -13,10 +13,12 @@ import           Hedgehog hiding (Var)
 import           Test.Hspec.Megaparsec
 import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
+import           Text.Read
 import           Test.Tasty.Hspec
 
 import           Jq.Expr
 import           Jq.Parser
+import           Generators
 
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
@@ -159,8 +161,20 @@ spec_StrLit = do
 
 -}
 
--- prop_NumLit :: Property
--- prop_NumLit = undefined
+hprop_NumLit :: Property
+hprop_NumLit = property $ do
+  genNum <- forAll $ jsonNumberGen
+
+  let nums = do
+        jqNum <- eTm $ parseExpr genNum
+        haskNum <- fmap NumLit (readMaybe $ Text.unpack genNum)
+        pure (jqNum, haskNum)
+
+  case nums of
+    Nothing -> failure
+    Just (j,h) -> j === h
+  where
+    eTm = either (const Nothing) Just
 
 spec_NumLit :: Spec
 spec_NumLit = do
