@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 584a4e7a23af0f616677866d26e722fb533ef731298ae4039b03067f259749e6
+-- hash: ebbbdc70a1f4fffb79680d62196e238754297a22015f3f741683ccf6736ba84f
 
 name:           jq
 version:        0.1.0
@@ -28,10 +28,18 @@ library
   default-extensions: OverloadedStrings
   build-depends:
       base
+    , hedgehog
+    , hspec
+    , hspec-megaparsec
     , megaparsec
     , mtl
     , parser-combinators
+    , raw-strings-qq
     , scientific
+    , tasty
+    , tasty-discover
+    , tasty-hedgehog
+    , tasty-hspec
     , text
   default-language: Haskell2010
 
@@ -44,10 +52,18 @@ executable jq
   default-extensions: OverloadedStrings
   build-depends:
       base
+    , hedgehog
+    , hspec
+    , hspec-megaparsec
     , megaparsec
     , mtl
     , parser-combinators
+    , raw-strings-qq
     , scientific
+    , tasty
+    , tasty-discover
+    , tasty-hedgehog
+    , tasty-hspec
     , text
   default-language: Haskell2010
 
@@ -91,10 +107,18 @@ benchmark bench
   build-depends:
       base
     , criterion
+    , hedgehog
+    , hspec
+    , hspec-megaparsec
     , jq
     , megaparsec
     , mtl
     , parser-combinators
+    , raw-strings-qq
     , scientific
+    , tasty
+    , tasty-discover
+    , tasty-hedgehog
+    , tasty-hspec
     , text
   default-language: Haskell2010
