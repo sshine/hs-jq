@@ -96,7 +96,7 @@ term = asum
   , Paren   <$> parens expr
   , Var     <$> var
   , dotExpr
-  ] >>= suffix
+  ] >>= suffixes
 
 dotExpr :: Parser Expr
 dotExpr = do
@@ -128,15 +128,17 @@ $ jq -n -c '[3,6,9,12][0,1:2,3]'
 
 -}
 
-suffix :: Expr -> Parser Expr
-suffix e = dotAfter <|> bracketAfter <|> pure e
+suffixes :: Expr -> Parser Expr
+suffixes e =
+  (suffix >>= suffixes) <|> pure e
   where
+    suffix = dotAfter <|> bracketAfter
+
     dotAfter = dot *> asum
       [ DotFieldAfter e <$> lexeme fieldNotKeyword
       , DotStrAfter e   <$> string
       ]
 
-    -- i, j :: Maybe Expr
     bracketAfter = brackets $ asum
       [ IndexRangeAfter e Nothing <$> colon (optional expr)      -- e[:], e[:j]
       , expr >>= \i -> asum
