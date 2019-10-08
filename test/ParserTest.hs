@@ -20,9 +20,70 @@ import           Jq.Expr
 import           Jq.Parser
 import           Generators
 
+-- Test helper for parsing Expr: Notice that this packs in 'it', so it goes
+-- directly into a 'describe' block unlike tests that test sub-parsers using
+-- parse' directly.
 shouldParseAs :: Text -> Expr -> Spec
 shouldParseAs s e =
   it (Text.unpack s) $ parseExpr s `shouldParse` e
+
+spec_FuncDef :: Spec
+spec_FuncDef = do
+  describe "funcDef" $ do
+    "def foo():2; 1" `shouldParseAs`
+      FuncDef "foo" [] (NumLit 2) (NumLit 1)
+
+    "def foo():2;1" `shouldParseAs`
+      FuncDef "foo" [] (NumLit 2) (NumLit 1)
+
+    "def foo(bar):2; 1" `shouldParseAs`
+      FuncDef "foo" [FilterParam "bar"] (NumLit 2) (NumLit 1)
+
+    "def foo($bar): 2; 1" `shouldParseAs`
+      FuncDef "foo" [ValueParam "bar"] (NumLit 2) (NumLit 1)
+
+    "def foo(bar): 2; 1" `shouldParseAs`
+      FuncDef "foo" [FilterParam "bar"] (NumLit 2) (NumLit 1)
+
+    "def foo(x): 1; def bar(y): 2; 3" `shouldParseAs`
+      FuncDef "foo" [FilterParam "x"] (NumLit 1)
+        (FuncDef "bar" [FilterParam "y"] (NumLit 2)
+          (NumLit 3))
+
+    "def foo(x; y): 2; 1" `shouldParseAs`
+      FuncDef "foo" [ FilterParam "x"
+                    , FilterParam "y"
+                    ] (NumLit 2) (NumLit 1)
+
+    "def foo($x; y): 2; 1" `shouldParseAs`
+      FuncDef "foo" [ ValueParam "x"
+                    , FilterParam "y"
+                    ] (NumLit 2) (NumLit 1)
+
+    "def foo(x; $y; $a; b): 2; 1" `shouldParseAs`
+      FuncDef "foo" [ FilterParam "x"
+                    , ValueParam "y"
+                    , ValueParam "a"
+                    , FilterParam "b"
+                    ] (NumLit 2) (NumLit 1)
+
+    "def foo($x; y): 1; def bar(a; $b): 2; 3" `shouldParseAs`
+      FuncDef "foo" [ ValueParam "x"
+                    , FilterParam "y"
+                    ] (NumLit 1)
+        (FuncDef "bar" [ FilterParam "a"
+                       , ValueParam "b"
+                       ] (NumLit 2)
+          (NumLit 3))
+
+    it "fails on missing space after 'def'" $
+      parseExpr `shouldFailOn` "deffoo(): 42;"
+
+    it "fails on keywords in variable names" $ do
+      parseExpr `shouldFailOn` "def foo(def): 42; 1"
+      parseExpr `shouldFailOn` "def foo(if): 42; 2"
+      parseExpr `shouldFailOn` "def foo(module): 42; 3"
+      parseExpr `shouldFailOn` "def foo(and): 42; 4"
 
 spec_DotAndBracketIndexing :: Spec
 spec_DotAndBracketIndexing = do

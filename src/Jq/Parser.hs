@@ -3,10 +3,10 @@
 
 module Jq.Parser where
 
-import           Control.Applicative
+import           Control.Applicative hiding (many)
 import           Control.Monad (void)
 import           Control.Monad.Reader
-import           Data.Char (isLetter, isAscii, isDigit)
+import           Data.Char (isLetter, isAlpha, isAscii, isDigit)
 import           Data.Maybe (fromMaybe)
 import           Data.Scientific (Scientific)
 import qualified Data.Text as Text
@@ -46,7 +46,7 @@ withoutComma = local (\env -> env { envAllowComma = False })
 withComma = local (\env -> env { envAllowComma = True })
 
 expr :: Parser Expr
-expr = exprOp
+expr = exprOp <|> funcDef
 
 exprOp :: Parser Expr
 exprOp = do
@@ -102,11 +102,10 @@ dotExpr :: Parser Expr
 dotExpr = do
   dot
   asum [ DotStr           <$> string
-       , DotField         <$> lexeme field
+       , DotField         <$> lexeme fieldNotKeyword
        , RecursiveDescent <$ dot
        , pure Identity
        ]
-
 
 {-
 -- TODO: Currently, suffix isn't called recursively.
@@ -128,11 +127,12 @@ $ jq -n -c '[3,6,9,12][0,1:2,3]'
 [6,9]
 
 -}
+
 suffix :: Expr -> Parser Expr
 suffix e = dotAfter <|> bracketAfter <|> pure e
   where
     dotAfter = dot *> asum
-      [ DotFieldAfter e <$> lexeme field
+      [ DotFieldAfter e <$> lexeme fieldNotKeyword
       , DotStrAfter e   <$> string
       ]
 
@@ -146,37 +146,18 @@ suffix e = dotAfter <|> bracketAfter <|> pure e
       ]
 
 funcDef :: Parser Expr
-funcDef =
-  sym "def" $> FuncDef
-    <*> lexeme field
-    <*> optional params
-    <*> between (sym ":") (sym ";") expr
+funcDef = label "funcDef" $
+  sym "def " $> FuncDef
+            <*> lexeme fieldNotKeyword -- TODO: Is this true? Probably is.
+            <*> parens (param `sepBy` sym ";")
+            <*> between (sym ":") (sym ";") expr
+            <*> expr
 
-params :: Parser Params
-params = parens . asum $
-  []
-
-field :: Parser Text
-field = fieldK >>= notKeyword
-  where
-    notKeyword word = if word `elem` keywords
-      then fail ("Keyword " ++ show word ++ " cannot be used as identifier")
-      else return word
-
-    keywords = [ "module", "import", "include", "def", "as"
-               , "if", "then", "else", "elif", "end", "and"
-               , "or", "reduce", "foreach", "try", "catch"
-               , "label", "break", "__loc__"
-               ]
-
--- [a-zA-Z_][a-zA-Z_0-9]*
-fieldK :: Parser Text
-fieldK = label "field" $
-  Text.cons <$> satisfy isFieldFirstChar
-            <*> takeWhile1P Nothing isFieldChar
-  where
-    isFieldFirstChar c = isAscii c && isLetter c || c == '_'
-    isFieldChar c = isFieldFirstChar c || isDigit c
+param :: Parser Param
+param = asum
+  [ ValueParam <$> (chunk "$" *> ident)
+  , FilterParam <$> ident
+  ]
 
 obj :: Parser [(ObjKey, Maybe Expr)]
 obj = braces (objElem `sepBy` sym ",")
@@ -184,7 +165,7 @@ obj = braces (objElem `sepBy` sym ",")
 objElem :: Parser (ObjKey, Maybe Expr)
 objElem = (,) <$> key <*> value
   where
-    key = asum [ FieldKey <$> fieldK
+    key = asum [ FieldKey <$> fieldKeyword
                , FieldExpr <$> expr ] -- FIXME: Too permissive.
     value = optional (sym ":" *> expr)
 
@@ -192,7 +173,7 @@ list :: Parser [Expr]
 list = brackets (expr `sepBy` sym ",")
 
 var :: Parser Text
-var = chunk "$" *> field
+var = chunk "$" *> fieldNotKeyword -- TODO: Is this true? Probably is.
 
 string :: Parser Text
 string = between (sym "\"") (sym "\"") content
@@ -221,6 +202,39 @@ string = between (sym "\"") (sym "\"") content
     --     't'
     --     'u' hex hex hex hex
 
+fieldNotKeyword :: Parser Text
+fieldNotKeyword = fieldKeyword >>= notKeyword
+  where
+    notKeyword :: Text -> Parser Text
+    notKeyword word =
+      if word `elem` keywords
+      then fail ("Keyword " ++ show word ++ " cannot be used as identifier")
+      else return word
+
+    keywords :: [Text]
+    keywords = [ "module", "import", "include", "def", "as"
+               , "if", "then", "else", "elif", "end", "and"
+               , "or", "reduce", "foreach", "try", "catch"
+               , "label", "break", "__loc__"
+               ]
+
+-- [a-zA-Z_][a-zA-Z_0-9]*
+fieldKeyword :: Parser Text
+fieldKeyword = Text.cons <$> satisfy isAZ_ <*> takeWhileP Nothing isAZ09_
+
+-- JBOL:  ([a-zA-Z_][a-zA-Z_0-9]*::)*[a-zA-Z_][a-zA-Z_0-9]*
+-- LL(1): ([a-zA-Z_][a-zA-Z0-9_]*)(::[a-zA-Z_][a-zA-Z0-9_]*)*
+ident :: Parser Text
+ident = Text.append <$> part <*> modulePrefix
+  where
+    part, modulePart, modulePrefix :: Parser Text
+    part = Text.cons <$> satisfy isAZ_ <*> takeWhileP Nothing isAZ09_
+    modulePart = Text.append <$> chunk "::" <*> part
+    modulePrefix = Text.concat <$> many modulePart
+
+isAZ_, isAZ09_ :: Char -> Bool
+isAZ_ c = isAscii c && isLetter c || c == '_'
+isAZ09_ c = isAZ_ c || isDigit c
 
 number :: Parser Scientific
 number = lexeme (scientific <?> "number")

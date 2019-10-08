@@ -25,7 +25,7 @@ type Ident = Text
 
 data Expr
       -- Function definitions
-    = FuncDef !Ident !(Maybe Params) Expr
+    = FuncDef !Ident ![Param] !Expr !Expr
 
       -- Control structures
     | As !Expr !Pattern
@@ -102,9 +102,9 @@ data ObjKey = FieldKey !Ident
             | FieldExpr !Expr
             deriving (Eq, Show)
 
-data Params = IdentParam !Ident      -- '$' ident
-            | FilterParam !Ident     -- e.g. 'def foo(f): f | f'
-            deriving (Show, Eq)
+data Param = ValueParam !Ident      -- '$' ident
+           | FilterParam !Ident     -- e.g. 'def foo(f): f | f'
+           deriving (Show, Eq)
 
 data Pattern = Ident !Text -- '... as $var'
              deriving (Eq, Show)
