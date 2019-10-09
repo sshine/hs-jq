@@ -46,7 +46,7 @@ $ stack test
 
 ## Status
 
-Only a half-done parser exists.
+Parser: Accepts 35% of `jq`'s test suite: 224 out of 349 tests failed.
 
 ## Contributing
 
