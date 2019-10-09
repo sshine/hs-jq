@@ -23,7 +23,9 @@ TODO: Catch this in type-checking phase.
 
 type Ident = Text
 
-data Expr
+type Expr = AbstractExpr Scientific
+
+data AbstractExpr n
       -- Function definitions
     = FuncDef !Ident ![Param] !Expr !Expr
 
@@ -90,7 +92,7 @@ data Expr
     | Obj ![(ObjKey, Maybe Expr)]    -- This is what JBOL's grammar calls MkDictPair
     | List ![Expr]
     | StrLit !Text
-    | NumLit !Scientific
+    | NumLit !n
     | BoolLit !Bool
     | NullLit
 
