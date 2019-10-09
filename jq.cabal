@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ebbbdc70a1f4fffb79680d62196e238754297a22015f3f741683ccf6736ba84f
+-- hash: 7e77e26185ffaabe54b7b8ca2e05a638773dc81c1262b4c0c7f9ef58fbdd92d5
 
 name:           jq
 version:        0.1.0
@@ -20,6 +20,7 @@ library
   exposed-modules:
       Jq
       Jq.Expr
+      Jq.Number
       Jq.Parser
   other-modules:
       Paths_jq

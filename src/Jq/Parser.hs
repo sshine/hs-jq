@@ -15,11 +15,13 @@ import           Data.Foldable (asum)
 import           Data.Functor (($>))
 import           Data.Void
 import           Text.Megaparsec
-import           Text.Megaparsec.Char (space)
+import           Text.Megaparsec.Char (space, digitChar, char')
 import           Text.Megaparsec.Char.Lexer (scientific)
+import           Text.Read (readMaybe)
 import           Control.Monad.Combinators.Expr
 
 import           Jq.Expr
+import           Jq.Number
 
 parse' :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
 parse' p = parse (runReaderT (runParser1 p) initialEnv) ""
@@ -85,17 +87,17 @@ exprOp = do
       ]
     ])
 
+-- FIXME: NumLit is moved down below to avoid ambiguity for now.
 term :: Parser Expr
 term = asum
   [ Obj     <$> obj
   , List    <$> list
   , StrLit  <$> string
-  , NumLit  <$> number
   , BoolLit <$> bool
   , NullLit <$ sym "null"
   , Paren   <$> parens expr
   , Var     <$> var
-  , dotExpr
+  , try (NumLit <$> number) <|> dotExpr
   ] >>= suffixes
 
 dotExpr :: Parser Expr
@@ -239,7 +241,42 @@ isAZ_ c = isAscii c && isLetter c || c == '_'
 isAZ09_ c = isAZ_ c || isDigit c
 
 number :: Parser Scientific
-number = lexeme (scientific <?> "number")
+number = toScientific <$> lexeme jqNumber
+
+jqNumber :: Parser JqNumber
+jqNumber = asum
+  [ JqNumber <$> integer1 <*> fraction0 <*> exponent <?> "jq number"
+  , JqNumber <$> integer0 <*> fraction1 <*> exponent <?> "jq number"
+  ]
+  where
+    integer0, integer1, fraction0, fraction1, exponent :: Parser (Maybe Integer)
+    integer1 = Just <$> digits
+    fraction0 = optional (dot >> digits)
+
+    integer0 = pure Nothing
+    fraction1 = Just <$> (dot >> digits)
+    exponent = optional (e >> signed digits)
+
+    digits :: Parser Integer
+    digits = takeWhile1P Nothing isDigit >>= toInteger
+
+    e :: Parser ()
+    e = void (char' 'e')
+
+    signed :: Integral a => Parser a -> Parser a
+    signed p = asum
+      [ chunk "+" >> p
+      , chunk "-" >> negate <$> p
+      , p
+      ]
+
+    -- FIXME: Use Data.Text.Read.decimal instead
+    toInteger :: Text -> Parser Integer
+    toInteger t = case readMaybe s of
+      Just n -> return n
+      Nothing -> fail ("Can't read " ++ show s ++ " as integer")
+      where
+        s = Text.unpack t
 
 bool :: Parser Bool
 bool = asum [ sym "true" $> True

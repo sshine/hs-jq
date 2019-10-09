@@ -15,7 +15,6 @@ import qualified Hedgehog.Range as Range
 
 -- DISCREPANCY: 'jq' allows both 000 in input and its own number literals,
 -- but JSON spec does not. We'll stay closest to 'jq' by doing this, too.
---
 
 -- | Helper Generators
 signGen :: Gen Text
@@ -27,7 +26,6 @@ signGen' = Gen.element ["", "-"]
 integerGen :: Gen Text
 integerGen = Text.pack . show <$>
       (Gen.integral $ Range.exponential 1 (10^309))
-
 
 decBefore :: Gen Text
 decBefore = Gen.constant "." <> integerGen
@@ -45,7 +43,7 @@ scientificNumberGen = base <> e <> signGen <> expGen
     base = Gen.choice [numberGen, fractionalGen, optFractionalGen]
     e = Gen.element ["e", "E"]
     expGen = Text.pack . show <$>
-      (Gen.integral (Range.linearFrom 0 (-10^16) (10^16)))
+      (Gen.integral (Range.linear 0 (10^309)))
 
 fractionalGen :: Gen Text
 fractionalGen = signGen' <> integerGen <> Gen.constant "." <> integerGen

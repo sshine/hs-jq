@@ -26,8 +26,6 @@ dependencies:
   - hspec-megaparsec
   - raw-strings-qq
 
-
-
 default-extensions:
   - OverloadedStrings
 
@@ -35,6 +33,7 @@ library:
   exposed-modules:
     - Jq
     - Jq.Expr
+    - Jq.Number
     - Jq.Parser
   source-dirs: src
 

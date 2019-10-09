@@ -13,7 +13,7 @@ import           Hedgehog hiding (Var)
 import           Test.Hspec.Megaparsec
 import           Text.Megaparsec (parse, ParseErrorBundle)
 import           Text.RawString.QQ
-import           Text.Read
+import           Text.Read (readEither)
 import           Test.Tasty.Hspec
 
 import           Jq.Expr
@@ -224,18 +224,19 @@ spec_StrLit = do
 
 hprop_NumLit :: Property
 hprop_NumLit = property $ do
-  genNum <- forAll $ jsonNumberGen
-
-  let nums = do
-        jqNum <- eTm $ parseExpr genNum
-        haskNum <- fmap NumLit (readMaybe $ Text.unpack genNum)
-        pure (jqNum, haskNum)
-
-  case nums of
-    Nothing -> failure
-    Just (j,h) -> j === h
+  n <- forAll jsonNumberGen
+  got <- evalEither (parseExpr n)
+  expected <- evalEither (parseHaskell (Text.unpack n))
+  got === expected
   where
-    eTm = either (const Nothing) Just
+    -- Use 'Neg' for negative numbers.
+    -- Add '0' before '.' when integer part is empty.
+    -- TODO: Add '0' after '.' when fraction is empty.
+    parseHaskell :: String -> Either String Expr
+    parseHaskell n
+      | take 1 n == "-" = fmap Neg (parseHaskell (drop 1 n))
+      | take 1 n == "." = parseHaskell ('0':n)
+      | otherwise = fmap NumLit (readEither n)
 
 spec_NumLit :: Spec
 spec_NumLit = do
@@ -246,18 +247,7 @@ spec_NumLit = do
     "-2.5"  `shouldParseAs` Neg (NumLit 2.5)
     "1e100" `shouldParseAs` NumLit 1e100
     ".1"    `shouldParseAs` NumLit 0.1
-
-    -- FIXME: Only one of these is true. In resolving the parser bug with
-    -- prefix '-', pick the one that is most convenient. It's probably the
-    -- latter.
-    "-.1"   `shouldParseAs` NumLit (-0.1)
     "-.1"   `shouldParseAs` Neg (NumLit 0.1)
-
-  -- FIXME: When the parser bug with prefix '-' is avoided, this unit test
-  -- can be removed in favor of one that addresses 'parseExpr' directly.
-  describe "number" $
-    it "parses .1" $
-      parse' number ".1" `shouldParse` 0.1
 
   describe "expr does not parse" $
     it "\"+42\"" $ parseExpr `shouldFailOn` "+42"
