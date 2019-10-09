@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7e77e26185ffaabe54b7b8ca2e05a638773dc81c1262b4c0c7f9ef58fbdd92d5
+-- hash: 711a79f6a70bb5321b6b36abc94f17f61b9c767ed564ac72984be685760e8095
 
 name:           jq
 version:        0.1.0
@@ -73,7 +73,9 @@ test-suite test
   main-is: test.hs
   other-modules:
       Generators
+      JqParserTestSuite
       ParserTest
+      TestHelpers
       Paths_jq
   hs-source-dirs:
       test
