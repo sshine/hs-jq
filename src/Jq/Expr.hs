@@ -64,11 +64,9 @@ data AbstractExpr n
     | Leq !Expr !Expr                -- '<='
     | Geq !Expr !Expr                -- '>='
 
-      -- Terms
-
       -- Prefix/postfix
     | Optional !Expr                 -- suffix '?'
-    | Neg !Expr                      -- unary '-'
+    | Neg !Expr                      -- prefix '-'
 
       -- Begins with '.'
     | Identity                       -- '.'
@@ -83,11 +81,9 @@ data AbstractExpr n
                                      -- postfix 'e[x:y]', 'e[x:]', 'e[:y]', 'e[:]'
     | DotFieldAfter !Expr !Ident     -- suffix 'e.foo'
     | DotStrAfter !Expr !Text        -- suffix '."foo"'
- -- | DotExp !Exp !Exp               -- suffix '.[e]' not supported by jq,
-                                     --   e.g. jq -n '{"foo":42}.["foo"]'
-                                     --   instead: '{"foo":42}["foo"]'
 
-      -- Literals, variables
+      -- Other terms
+    | FilterCall !Text !(Maybe [Expr]) -- 'foo', 'foo()', 'foo(1)', 'foo(1; 2)'
     | Var Ident                      -- '$var' ([a-zA-Z_][a-zA-Z_0-9]*::)*[a-zA-Z_][a-zA-Z_0-9]*
     | Obj ![(ObjKey, Maybe Expr)]    -- This is what JBOL's grammar calls MkDictPair
     | List ![Expr]

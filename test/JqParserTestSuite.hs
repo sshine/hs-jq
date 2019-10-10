@@ -31,9 +31,9 @@ spec_JqParserTestSuite = do
   describe "the jq test suite" $
     forM_ cases $ \JqTestCase{..} ->
       case jqtExpected of
-        Right _ -> it ("succeeds on: " ++ Text.unpack jqtProgram) $
+        Right _ -> it (Text.unpack jqtProgram) $
                      parseExpr `shouldSucceedOn` jqtProgram
-        Left _ -> it ("fails on: " ++ Text.unpack jqtProgram) $
+        Left _ -> it ("%%FAIL: " ++ Text.unpack jqtProgram) $
                     parseExpr `shouldFailOn` jqtProgram
 
 fromFile :: FilePath -> IO [JqTestCase]
@@ -62,12 +62,8 @@ fromFile filePath = sanitize <$> IO.readFile filePath
       | "%%FAIL" `Text.isPrefixOf` failCase =
         return (JqTestCase program Nothing (Left expectedError))
 
-    toTestCase (firstLine : _)
-      | "@" `Text.isPrefixOf` firstLine =
-        Nothing
-
     toTestCase (program : input : outputs) =
         return (JqTestCase program (Just input) (Right outputs))
 
-    toTestcase otherwise =
-        error ("Unknown test format: " ++ show otherwise)
+    toTestcase unknown =
+        error ("Unknown test format: " ++ show unknown)

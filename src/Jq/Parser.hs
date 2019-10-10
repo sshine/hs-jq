@@ -27,7 +27,7 @@ parse' :: Parser a -> Text -> Either (ParseErrorBundle Text Void) a
 parse' p = parse (runReaderT (runParser1 p) initialEnv) ""
 
 parseExpr :: Text -> Either (ParseErrorBundle Text Void) Expr
-parseExpr = parse' expr
+parseExpr = parse' (space *> expr <* eof)
 
 newtype Parser a =
   Parser { runParser1 :: ReaderT JqParserEnv (Parsec Void Text) a }
@@ -48,7 +48,7 @@ withoutComma = local (\env -> env { envAllowComma = False })
 withComma = local (\env -> env { envAllowComma = True })
 
 expr :: Parser Expr
-expr = exprOp <|> funcDef
+expr = exprOp
 
 exprOp :: Parser Expr
 exprOp = do
@@ -87,7 +87,6 @@ exprOp = do
       ]
     ])
 
--- FIXME: NumLit is moved down below to avoid ambiguity for now.
 term :: Parser Expr
 term = asum
   [ Obj     <$> obj
@@ -98,37 +97,23 @@ term = asum
   , Paren   <$> parens expr
   , Var     <$> var
   , try (NumLit <$> number) <|> dotExpr
+  , funcDef
+  , filterCall
   ] >>= suffixes
 
 dotExpr :: Parser Expr
 dotExpr = do
   dot
   asum [ DotStr           <$> string
-       , DotField         <$> lexeme fieldNotKeyword
-       , RecursiveDescent <$ dot
-       , pure Identity
+       , DotField         <$> lexeme (field >>= notKeyword)
+       , RecursiveDescent <$ dot <* space
+       , Identity         <$ space
        ]
 
-{-
--- TODO: Currently, suffix isn't called recursively.
--- TODO: The following jq expressions are not yet supported:
-
-$ jq -n -c '[3,6,9,12][0,2]'
-3
-9
-
-$ jq -n -c '[3,6,9,12][0:1,2,3]'
-[3]
-[3,6]
-[3,6,9]
-
-$ jq -n -c '[3,6,9,12][0,1:2,3]'
-[3,6]
-[3,6,9]
-[6]
-[6,9]
-
--}
+filterCall :: Parser Expr
+filterCall =
+  FilterCall <$> lexeme (ident >>= notKeyword)
+             <*> optional (parens (expr `sepBy` sym ";"))
 
 suffixes :: Expr -> Parser Expr
 suffixes e =
@@ -137,7 +122,7 @@ suffixes e =
     suffix = dotAfter <|> bracketAfter
 
     dotAfter = dot *> asum
-      [ DotFieldAfter e <$> lexeme fieldNotKeyword
+      [ DotFieldAfter e <$> lexeme (field >>= notKeyword)
       , DotStrAfter e   <$> string
       ]
 
@@ -152,13 +137,13 @@ suffixes e =
 funcDef :: Parser Expr
 funcDef = label "funcDef" $
   sym "def " $> FuncDef
-            <*> lexeme fieldNotKeyword -- TODO: Is this true? Probably is.
-            <*> parens (param `sepBy` sym ";")
+            <*> lexeme (field >>= notKeyword) -- TODO: Is this true? Probably is.
+            <*> parens (funcParam `sepBy` sym ";")
             <*> between (sym ":") (sym ";") expr
             <*> expr
 
-param :: Parser Param
-param = asum
+funcParam :: Parser Param
+funcParam = asum
   [ ValueParam <$> (chunk "$" *> ident)
   , FilterParam <$> ident
   ]
@@ -169,7 +154,7 @@ obj = braces (objElem `sepBy` sym ",")
 objElem :: Parser (ObjKey, Maybe Expr)
 objElem = (,) <$> key <*> value
   where
-    key = asum [ FieldKey <$> fieldKeyword
+    key = asum [ FieldKey <$> lexeme (field >>= notKeyword)
                , FieldExpr <$> expr ] -- FIXME: Too permissive.
     value = optional (sym ":" *> expr)
 
@@ -177,7 +162,7 @@ list :: Parser [Expr]
 list = brackets (expr `sepBy` sym ",")
 
 var :: Parser Text
-var = chunk "$" *> fieldNotKeyword -- TODO: Is this true? Probably is.
+var = chunk "$" >> (field >>= notKeyword) -- TODO: Is this true? Probably is.
 
 string :: Parser Text
 string = between (sym "\"") (sym "\"") content
@@ -206,25 +191,22 @@ string = between (sym "\"") (sym "\"") content
     --     't'
     --     'u' hex hex hex hex
 
-fieldNotKeyword :: Parser Text
-fieldNotKeyword = fieldKeyword >>= notKeyword
-  where
-    notKeyword :: Text -> Parser Text
-    notKeyword word =
-      if word `elem` keywords
-      then fail ("Keyword " ++ show word ++ " cannot be used as identifier")
-      else return word
+notKeyword :: Text -> Parser Text
+notKeyword word =
+  if word `elem` keywords
+  then fail ("Keyword " ++ show word ++ " cannot be used as identifier")
+  else return word
 
-    keywords :: [Text]
-    keywords = [ "module", "import", "include", "def", "as"
-               , "if", "then", "else", "elif", "end", "and"
-               , "or", "reduce", "foreach", "try", "catch"
-               , "label", "break", "__loc__"
-               ]
+keywords :: [Text]
+keywords = [ "module", "import", "include", "def", "as"
+           , "if", "then", "else", "elif", "end", "and"
+           , "or", "reduce", "foreach", "try", "catch"
+           , "label", "break", "__loc__"
+           ]
 
 -- [a-zA-Z_][a-zA-Z_0-9]*
-fieldKeyword :: Parser Text
-fieldKeyword = Text.cons <$> satisfy isAZ_ <*> takeWhileP Nothing isAZ09_
+field :: Parser Text
+field = Text.cons <$> satisfy isAZ_ <*> takeWhileP Nothing isAZ09_
 
 -- JBOL:  ([a-zA-Z_][a-zA-Z_0-9]*::)*[a-zA-Z_][a-zA-Z_0-9]*
 -- LL(1): ([a-zA-Z_][a-zA-Z0-9_]*)(::[a-zA-Z_][a-zA-Z0-9_]*)*

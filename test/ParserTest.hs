@@ -22,7 +22,7 @@ import           Generators
 import           TestHelpers
 
 spec_FuncDef :: Spec
-spec_FuncDef = do
+spec_FuncDef =
   describe "funcDef" $ do
     "def foo():2; 1" `shouldParseAs`
       FuncDef "foo" [] (NumLit 2) (NumLit 1)
@@ -70,6 +70,14 @@ spec_FuncDef = do
                        ] (NumLit 2)
           (NumLit 3))
 
+    "def map(f): [ .[] | f ]; [1,2,3] | map(. * .)"
+      `shouldParseAs`
+        FuncDef "map" [ FilterParam "f" ]
+          (List [ Pipe (ValueIterator Identity)
+                       (FilterCall "f" Nothing) ])
+          (Pipe (List [ NumLit 1, NumLit 2, NumLit 3 ])
+                (FilterCall "map" (Just [ Mult Identity Identity ])))
+
     it "fails on missing space after 'def'" $
       parseExpr `shouldFailOn` "deffoo(): 42;"
 
@@ -81,6 +89,10 @@ spec_FuncDef = do
 
 spec_DotAndBracketIndexing :: Spec
 spec_DotAndBracketIndexing = do
+  describe "expr parses recursive-descent combinator" $ do
+    ".." `shouldParseAs` RecursiveDescent
+    ".. | ." `shouldParseAs` Pipe RecursiveDescent Identity
+
   describe "expr parses dot-indexing" $ do
     ".foo.bar" `shouldParseAs`
       DotFieldAfter (DotField "foo") "bar"
@@ -141,7 +153,7 @@ spec_Parentheses =
     "((null))" `shouldParseAs` Paren (Paren NullLit)
     "([1, ([1, ((1))]), 1])"
       `shouldParseAs`
-        Paren (List [one, Paren (List [one, Paren (Paren (one))]), one])
+        Paren (List [one, Paren (List [one, Paren (Paren one)]), one])
   where
     one = NumLit 1
 
@@ -188,12 +200,13 @@ spec_Var =
     "$foo" `shouldParseAs` Var "foo"
 
 spec_StrLit :: Spec
-spec_StrLit = do
+spec_StrLit =
   describe "expr parses" $ do
     [r|""|]              `shouldParseAs` StrLit ""
     [r|"Hello, World!"|] `shouldParseAs` StrLit "Hello, World!"
 
-  -- FIXME: The parser doesn't support escape sequences.
+  -- FIXME: The parser doesn't support escape sequences. See #3.
+  -- FIXME: The parser doesn't support string interpolation. See #16.
 
 {-
 
