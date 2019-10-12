@@ -3,10 +3,11 @@
 
 module ParserTest where
 
-import           Data.Char (chr)
+import           Data.Char (chr, isHexDigit)
 import           Data.Foldable (for_)
 import qualified Data.Text as Text
 import           Data.Text (Text)
+import           Data.Text.Read (hexadecimal)
 import           Data.Void
 
 import           Hedgehog hiding (Var)
@@ -240,15 +241,12 @@ spec_Var =
     "$foo" `shouldParseAs` Var "foo"
 
 spec_StrLit :: Spec
-spec_StrLit =
+spec_StrLit = do
   describe "expr parses" $ do
     [r|""|]              `shouldParseAs` StrLit ""
     [r|"Hello, World!"|] `shouldParseAs` StrLit "Hello, World!"
 
-  -- FIXME: The parser doesn't support escape sequences. See #3.
   -- FIXME: The parser doesn't support string interpolation. See #16.
-
-{-
 
   describe "escape sequences" $ do
     [r|"\""|] `shouldParseAs` StrLit "\"" -- double quote
@@ -260,14 +258,26 @@ spec_StrLit =
     [r|"\r"|] `shouldParseAs` StrLit "\r" -- carriage return
     [r|"\t"|] `shouldParseAs` StrLit "\t" -- tab
 
-
+{-
   -- FIXME: The parser is too liberal wrt. characters
   describe "string literals with character literals U+0000 through U+001F" $
     it "should fail when they're not escaped" $
       for_ [0..0x1f] $ \c ->
         parse expr "" `shouldFailOn` Text.pack [ '"', chr c, '"' ]
-
 -}
+
+hprop_UnicodeEscape :: Property
+hprop_UnicodeEscape = property $ do
+  e <- forAll jsonUnicodeEscapeStringGen
+  got <- evalEither (parseExpr e)
+  expected <- evalEither (parseHaskell (Text.unpack e))
+  got === expected
+  where
+    parseHaskell :: String -> Either String Expr
+    parseHaskell s =
+      StrLit . Text.singleton . chr . fst <$> hexadecimal (Text.pack h)
+      where h = takeWhile isHexDigit $ drop 3 s
+
 
 hprop_NumLit :: Property
 hprop_NumLit = property $ do
