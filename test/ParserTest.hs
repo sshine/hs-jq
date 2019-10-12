@@ -126,6 +126,7 @@ spec_DotAndBracketIndexing = do
     ".[0:]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) Nothing
     ".[:0]" `shouldParseAs` IndexRangeAfter Identity Nothing (Just (NumLit 0))
     ".[0:9]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) (Just (NumLit 9))
+    ".[ 0 : 9 ]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) (Just (NumLit 9))
 
     [r|{foo: 1}["foo"]|] `shouldParseAs`
       IndexAfter objFoo (StrLit "foo")
@@ -133,13 +134,40 @@ spec_DotAndBracketIndexing = do
     ".foo[.bar + 1]" `shouldParseAs`
       IndexAfter (DotField "foo") (Plus (DotField "bar") (NumLit 1))
 
+  describe "commas within bracket-indexing" $ do
+    ".[1,2]" `shouldParseAs` IndexAfter Identity (Comma (NumLit 1) (NumLit 2))
+    ".[1,2,3]" `shouldParseAs` IndexAfter Identity (Comma (Comma one two) three)
+
+  describe "commas within bracket-indexing ranges" $ do
+    ".[0,1:]" `shouldParseAs` IndexRangeAfter Identity (Just (Comma zero one)) Nothing
+    ".[:0,1]" `shouldParseAs` IndexRangeAfter Identity Nothing (Just (Comma zero one))
+    ".[0:1,2]" `shouldParseAs` IndexRangeAfter Identity (Just zero) (Just (Comma one two))
+    ".[0,1:2]" `shouldParseAs` IndexRangeAfter Identity (Just (Comma zero one)) (Just two)
+    ".[0,1:2,3]" `shouldParseAs` IndexRangeAfter Identity (Just (Comma zero one))
+                                                          (Just (Comma two three))
+    ".[0,1,2:2,3]" `shouldParseAs` IndexRangeAfter Identity (Just (Comma (Comma zero one) two))
+                                                            (Just (Comma two three))
+    ".[0,1:1,2,3]" `shouldParseAs` IndexRangeAfter Identity (Just (Comma zero one))
+                                                            (Just (Comma (Comma one two) three))
+
+  describe "commas within lists and bracket-indexing and ranges" $ do
+    "[0,1,2,3][0,2,3]" `shouldParseAs` IndexAfter (List [zero, one, two, three])
+                                                  (Comma (Comma zero two) three)
+    "[0,1,2,3][0,1:2,3]" `shouldParseAs` IndexRangeAfter (List [zero, one, two, three])
+                                                         (Just (Comma zero one))
+                                                         (Just (Comma two three))
+
   describe "expr parses multiple suffixes" $ do
     ".[][]" `shouldParseAs` ValueIterator (ValueIterator Identity)
     ".[][][]" `shouldParseAs` ValueIterator (ValueIterator (ValueIterator Identity))
     ".foo.bar.baz" `shouldParseAs` DotFieldAfter (DotFieldAfter (DotField "foo") "bar") "baz"
 
   where
-    objFoo = Obj [ (FieldKey "foo", Just (NumLit 1)) ]
+    zero = NumLit 0
+    one = NumLit 1
+    two = NumLit 2
+    three = NumLit 3
+    objFoo = Obj [ (FieldKey "foo", Just one) ]
 
 spec_Pipe :: Spec
 spec_Pipe =

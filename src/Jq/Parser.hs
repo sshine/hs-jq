@@ -126,7 +126,7 @@ suffixes e =
       , DotStrAfter e   <$> string
       ]
 
-    bracketAfter = brackets $ asum
+    bracketAfter = brackets . withComma $ asum
       [ IndexRangeAfter e Nothing <$> colon (optional expr)      -- e[:], e[:j]
       , expr >>= \i -> asum
           [ IndexRangeAfter e (Just i) <$> colon (optional expr) -- e[i:], e[i:j]
@@ -159,7 +159,7 @@ objElem = (,) <$> key <*> value
     value = optional (sym ":" *> expr)
 
 list :: Parser [Expr]
-list = brackets (expr `sepBy` sym ",")
+list = brackets . withoutComma $ expr `sepBy` sym ","
 
 var :: Parser Text
 var = chunk "$" >> (field >>= notKeyword) -- TODO: Is this true? Probably is.
@@ -275,7 +275,7 @@ parens :: Parser a -> Parser a
 parens = between (sym "(") (sym ")") . withComma
 
 brackets :: Parser a -> Parser a
-brackets = between (sym "[") (sym "]") . withoutComma
+brackets = between (sym "[") (sym "]")
 
 braces :: Parser a -> Parser a
 braces = between (sym "{") (sym "}") . withoutComma

@@ -46,7 +46,7 @@ $ stack test
 
 ## Status
 
-Parser: Accepts 65% of `jq`'s test suite: 145 out of 418 tests failed.
+Parser: 143 out of 436 tests failed.
 
 ## Contributing
 
