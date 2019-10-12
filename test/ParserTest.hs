@@ -87,6 +87,18 @@ spec_FuncDef =
       parseExpr `shouldFailOn` "def foo(module): 42; 3"
       parseExpr `shouldFailOn` "def foo(and): 42; 4"
 
+spec_FilterCall :: Spec
+spec_FilterCall =
+  describe "FilterCall" $ do
+    "foo" `shouldParseAs` FilterCall "foo" Nothing
+    "foo()" `shouldParseAs` FilterCall "foo" (Just [])
+    "foo(x)" `shouldParseAs` FilterCall "foo" (Just [FilterCall "x" Nothing])
+    "foo($x)" `shouldParseAs` FilterCall "foo" (Just [Var "x"])
+    "foo(x; y)" `shouldParseAs`
+      FilterCall "foo" (Just [ FilterCall "x" Nothing
+                             , FilterCall "y" Nothing ])
+    "foo($x; $y)" `shouldParseAs` FilterCall "foo" (Just [Var "x", Var "y"])
+
 spec_DotAndBracketIndexing :: Spec
 spec_DotAndBracketIndexing = do
   describe "expr parses recursive-descent combinator" $ do
