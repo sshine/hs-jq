@@ -6,16 +6,17 @@ module Jq.Parser where
 import           Control.Applicative hiding (many)
 import           Control.Monad (void)
 import           Control.Monad.Reader
-import           Data.Char (isLetter, isAlpha, isAscii, isDigit)
+import           Data.Char (isLetter, isAlpha, isAscii, isDigit, isHexDigit, chr)
 import           Data.Maybe (fromMaybe)
 import           Data.Scientific (Scientific)
 import qualified Data.Text as Text
 import           Data.Text (Text)
+import           Data.Text.Read (hexadecimal)
 import           Data.Foldable (asum)
 import           Data.Functor (($>))
 import           Data.Void
 import           Text.Megaparsec
-import           Text.Megaparsec.Char (space, digitChar, char')
+import           Text.Megaparsec.Char (space, digitChar, char, char')
 import           Text.Megaparsec.Char.Lexer (scientific)
 import           Text.Read (readMaybe)
 import           Control.Monad.Combinators.Expr
@@ -167,29 +168,31 @@ var = chunk "$" >> (field >>= notKeyword) -- TODO: Is this true? Probably is.
 string :: Parser Text
 string = between (sym "\"") (sym "\"") content
   where
-    content = takeWhileP Nothing (\c -> c /= '"' && c /= '\\')
-    -- FIXME: Handle escape sequences in strings. It may have made sense to
-    -- use Aeson's parser for this, but it's written in Attoparsec. Also,
-    -- there are some discrepancies between what 'jq' supports and what is
-    -- JSON according to https://www.json.org/ wrt. escape sequences:
-    --
-    --
-    -- From https://www.json.org/ it says:
-    --
-    -- character
-    --     '0020' . '10ffff' - '"' - '\'
-    --     '\' escape
-    --
-    -- escape
-    --     '"'
-    --     '\'
-    --     '/'
-    --     'b'
-    --     'f'
-    --     'n'
-    --     'r'
-    --     't'
-    --     'u' hex hex hex hex
+    content = Text.concat <$> many stringPart
+
+    stringPart :: Parser Text
+    stringPart = asum [ escapeSequence, plainString ]
+
+    plainString :: Parser Text
+    plainString = takeWhile1P Nothing (\c -> c /= '"' && c /= '\\')
+
+    escapeSequence :: Parser Text
+    escapeSequence = char '\\' >> Text.singleton <$> asum
+      [ char '"'
+      , char '\\'
+      , char '/'
+      , char 'b' $> '\b'
+      , char 'f' $> '\f'
+      , char 'n' $> '\n'
+      , char 'r' $> '\r'
+      , char 't' $> '\t'
+      , char 'u' >> count 4 (satisfy isHexDigit) >>= unicodeHex
+      ]
+
+    unicodeHex :: String -> Parser Char
+    unicodeHex t = case hexadecimal $ Text.pack t of
+      Right (r, "") -> return $ chr r
+      _             -> fail ("Cannot decode \\u" ++ show t ++ ". (Invalid code)")
 
 notKeyword :: Text -> Parser Text
 notKeyword word =

@@ -57,3 +57,11 @@ jsonNumberGen =
              , scientificNumberGen
              , fractionalGen
              , optFractionalGen ]
+
+-- | String type generators
+unicodeEscapeGen :: Gen Text
+unicodeEscapeGen =
+    Gen.constant "\\u" <> Gen.text (Range.singleton 4) Gen.hexit
+
+jsonUnicodeEscapeStringGen :: Gen Text
+jsonUnicodeEscapeStringGen = Gen.constant "\"" <> unicodeEscapeGen <> Gen.constant "\""
