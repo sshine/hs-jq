@@ -72,7 +72,7 @@ data AbstractExpr n
     | Identity                       -- '.'
     | RecursiveDescent               -- '..'
     | DotField !Ident                -- '.foo'
-    | DotStr !Text                   -- '."foo"'
+    | DotStr !JqString               -- '."foo"'
 
       -- Postfix [], postfix indexing with . and []
     | ValueIterator !Expr            -- '[]'
@@ -80,14 +80,14 @@ data AbstractExpr n
     | IndexRangeAfter !Expr !(Maybe Expr) !(Maybe Expr)
                                      -- postfix 'e[x:y]', 'e[x:]', 'e[:y]', 'e[:]'
     | DotFieldAfter !Expr !Ident     -- suffix 'e.foo'
-    | DotStrAfter !Expr !Text        -- suffix '."foo"'
+    | DotStrAfter !Expr !JqString    -- suffix '."foo"'
 
       -- Other terms
     | FilterCall !Text !(Maybe [Expr]) -- 'foo', 'foo()', 'foo(1)', 'foo(1; 2)'
     | Var Ident                      -- '$var' ([a-zA-Z_][a-zA-Z_0-9]*::)*[a-zA-Z_][a-zA-Z_0-9]*
     | Obj ![(ObjKey, Maybe Expr)]    -- This is what JBOL's grammar calls MkDictPair
     | List ![Expr]
-    | StrLit !Text
+    | Str !JqString
     | NumLit !n
     | BoolLit !Bool
     | NullLit
@@ -106,3 +106,19 @@ data Param = ValueParam !Ident      -- '$' ident
 
 data Pattern = Ident !Text -- '... as $var'
              deriving (Eq, Show)
+
+data StrChunk = StrLit !Text
+              | StrEsc !Char
+              | StrInterp !Expr
+              deriving (Eq, Show)
+
+type JqString = [StrChunk]
+
+mkStrExpr :: Text -> Expr
+mkStrExpr = Str . mkStrLit
+
+mkStrLit :: Text -> JqString
+mkStrLit = return . StrLit
+
+mkStrEscExpr :: Char -> Expr
+mkStrEscExpr = Str . return . StrEsc

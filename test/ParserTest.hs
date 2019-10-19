@@ -114,7 +114,7 @@ spec_DotAndBracketIndexing = do
       DotFieldAfter objFoo "foo"
 
     [r|{foo: 1}."foo"|] `shouldParseAs`
-      DotStrAfter objFoo "foo"
+      DotStrAfter objFoo (mkStrLit "foo")
 
   describe "expr parses the value iterator" $ do
     ".[]" `shouldParseAs` ValueIterator Identity
@@ -130,7 +130,7 @@ spec_DotAndBracketIndexing = do
     ".[ 0 : 9 ]" `shouldParseAs` IndexRangeAfter Identity (Just (NumLit 0)) (Just (NumLit 9))
 
     [r|{foo: 1}["foo"]|] `shouldParseAs`
-      IndexAfter objFoo (StrLit "foo")
+      IndexAfter objFoo (mkStrExpr "foo")
 
     ".foo[.bar + 1]" `shouldParseAs`
       IndexAfter (DotField "foo") (Plus (DotField "bar") (NumLit 1))
@@ -204,15 +204,15 @@ spec_Obj =
     "{}" `shouldParseAs` Obj []
 
     [r|{"foo": 42}|] `shouldParseAs`
-      Obj [(FieldExpr (StrLit "foo"), Just (NumLit 42))]
+      Obj [(FieldExpr (mkStrExpr "foo"), Just (NumLit 42))]
 
     "{foo: 42}" `shouldParseAs`
       Obj [(FieldKey "foo", Just (NumLit 42))]
 
     [r|{"foo": 1, "bar": 2}|]
       `shouldParseAs`
-        Obj [ (FieldExpr (StrLit "foo"), Just (NumLit 1))
-            , (FieldExpr (StrLit "bar"), Just (NumLit 2))
+        Obj [ (FieldExpr (mkStrExpr "foo"), Just (NumLit 1))
+            , (FieldExpr (mkStrExpr "bar"), Just (NumLit 2))
             ]
 
     "{foo: 1, bar: 2}"
@@ -240,31 +240,63 @@ spec_Var =
   describe "$vars" $
     "$foo" `shouldParseAs` Var "foo"
 
-spec_StrLit :: Spec
-spec_StrLit = do
+spec_Str :: Spec
+spec_Str = do
   describe "expr parses" $ do
-    [r|""|]              `shouldParseAs` StrLit ""
-    [r|"Hello, World!"|] `shouldParseAs` StrLit "Hello, World!"
-
-  -- FIXME: The parser doesn't support string interpolation. See #16.
+    [r|""|]              `shouldParseAs` Str []
+    [r|"Hello, World!"|] `shouldParseAs` mkStrExpr "Hello, World!"
 
   describe "escape sequences" $ do
-    [r|"\""|] `shouldParseAs` StrLit "\"" -- double quote
-    [r|"\\"|] `shouldParseAs` StrLit "\\" -- backslash
-    [r|"\/"|] `shouldParseAs` StrLit "/"  -- forward slash
-    [r|"\b"|] `shouldParseAs` StrLit "\b" -- backspace
-    [r|"\f"|] `shouldParseAs` StrLit "\f" -- new page
-    [r|"\n"|] `shouldParseAs` StrLit "\n" -- newline
-    [r|"\r"|] `shouldParseAs` StrLit "\r" -- carriage return
-    [r|"\t"|] `shouldParseAs` StrLit "\t" -- tab
+    [r|"\""|] `shouldParseAs` mkStrEscExpr '\"' -- double quote
+    [r|"\\"|] `shouldParseAs` mkStrEscExpr '\\' -- backslash
+    [r|"\/"|] `shouldParseAs` mkStrEscExpr '/'  -- forward slash
+    [r|"\b"|] `shouldParseAs` mkStrEscExpr '\b' -- backspace
+    [r|"\f"|] `shouldParseAs` mkStrEscExpr '\f' -- new page
+    [r|"\n"|] `shouldParseAs` mkStrEscExpr '\n' -- newline
+    [r|"\r"|] `shouldParseAs` mkStrEscExpr '\r' -- carriage return
+    [r|"\t"|] `shouldParseAs` mkStrEscExpr '\t' -- tab
 
-{-
+  describe "embedded escape sequences" $ do
+    [r|"Hello\nWorld!\n"|] `shouldParseAs`
+      Str [ StrLit "Hello"
+          , StrEsc '\n'
+          , StrLit "World!"
+          , StrEsc '\n'
+          ]
+    [r|"\n--\n"|] `shouldParseAs`
+      Str [ StrEsc '\n'
+          , StrLit "--"
+          , StrEsc '\n'
+          ]
+    [r|" \n  \n   \n    "|] `shouldParseAs`
+      Str [ StrLit " "
+          , StrEsc '\n'
+          , StrLit "  "
+          , StrEsc '\n'
+          , StrLit "   "
+          , StrEsc '\n'
+          , StrLit "    "
+          ]
+
+  describe "string interpolation" $ do
+    let twoPlusTwo = Plus (NumLit 2) (NumLit 2)
+    [r|"\(null)"|] `shouldParseAs` Str [ StrInterp NullLit ]
+    [r|"\(2 + 2)"|] `shouldParseAs` Str [ StrInterp twoPlusTwo ]
+    [r|"Hello, \(2 + 2)!"|] `shouldParseAs`
+      Str [ StrLit "Hello, "
+          , StrInterp twoPlusTwo
+          , StrLit "!"
+          ]
+    [r|"\n\("\n")"|] `shouldParseAs`
+      Str [ StrEsc '\n'
+          , StrInterp (Str [ StrEsc '\n' ])
+          ]
+
   -- FIXME: The parser is too liberal wrt. characters
   describe "string literals with character literals U+0000 through U+001F" $
     it "should fail when they're not escaped" $
       for_ [0..0x1f] $ \c ->
-        parse expr "" `shouldFailOn` Text.pack [ '"', chr c, '"' ]
--}
+        parseExpr `shouldFailOn` Text.pack [ '"', chr c, '"' ]
 
 hprop_UnicodeEscape :: Property
 hprop_UnicodeEscape = property $ do
@@ -275,7 +307,7 @@ hprop_UnicodeEscape = property $ do
   where
     parseHaskell :: String -> Either String Expr
     parseHaskell s =
-      StrLit . Text.singleton . chr . fst <$> hexadecimal (Text.pack h)
+      mkStrEscExpr . chr . fst <$> hexadecimal (Text.pack h)
       where h = takeWhile isHexDigit $ drop 3 s
 
 

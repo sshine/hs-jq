@@ -92,7 +92,7 @@ term :: Parser Expr
 term = asum
   [ Obj     <$> obj
   , List    <$> list
-  , StrLit  <$> string
+  , Str     <$> string
   , BoolLit <$> bool
   , NullLit <$ sym "null"
   , Paren   <$> parens expr
@@ -165,19 +165,13 @@ list = brackets . withoutComma $ expr `sepBy` sym ","
 var :: Parser Text
 var = chunk "$" >> (field >>= notKeyword) -- TODO: Is this true? Probably is.
 
-string :: Parser Text
-string = between (sym "\"") (sym "\"") content
+string :: Parser [StrChunk]
+string = between (sym "\"") (sym "\"") (many (strLit <|> strEsc))
   where
-    content = Text.concat <$> many stringPart
-
-    stringPart :: Parser Text
-    stringPart = asum [ escapeSequence, plainString ]
-
-    plainString :: Parser Text
-    plainString = takeWhile1P Nothing (\c -> c /= '"' && c /= '\\')
-
-    escapeSequence :: Parser Text
-    escapeSequence = char '\\' >> Text.singleton <$> asum
+    strLit, strEsc, strEscChar, strEscInterp :: Parser StrChunk
+    strLit = StrLit <$> takeWhile1P Nothing (\c -> c /= '"' && c /= '\\')
+    strEsc = char '\\' >> (strEscChar <|> strEscInterp)
+    strEscChar = StrEsc <$> asum
       [ char '"'
       , char '\\'
       , char '/'
@@ -188,6 +182,7 @@ string = between (sym "\"") (sym "\"") content
       , char 't' $> '\t'
       , char 'u' >> count 4 (satisfy isHexDigit) >>= unicodeHex
       ]
+    strEscInterp = StrInterp <$> parens (withComma expr)
 
     unicodeHex :: String -> Parser Char
     unicodeHex t = case hexadecimal $ Text.pack t of

@@ -46,7 +46,7 @@ $ stack test
 
 ## Status
 
-Parser: 143 out of 436 tests failed.
+Parser: 136 out of 453 tests failed.
 
 ## Contributing
 
