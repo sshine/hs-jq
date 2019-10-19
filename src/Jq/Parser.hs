@@ -138,7 +138,7 @@ suffixes e =
 funcDef :: Parser Expr
 funcDef = label "funcDef" $
   sym "def " $> FuncDef
-            <*> lexeme (field >>= notKeyword) -- TODO: Is this true? Probably is.
+            <*> lexeme (field >>= notKeyword)
             <*> parens (funcParam `sepBy` sym ";")
             <*> between (sym ":") (sym ";") expr
             <*> expr
@@ -163,8 +163,9 @@ list :: Parser [Expr]
 list = brackets . withoutComma $ expr `sepBy` sym ","
 
 var :: Parser Text
-var = chunk "$" >> (field >>= notKeyword) -- TODO: Is this true? Probably is.
+var = chunk "$" >> (field >>= notKeyword)
 
+-- TODO: Does not differentiate in AST between \n and \u0020.
 string :: Parser [StrChunk]
 string = between (sym "\"") (sym "\"") (many (strLit <|> strEsc))
   where

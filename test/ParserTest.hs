@@ -79,8 +79,11 @@ spec_FuncDef =
           (Pipe (List [ NumLit 1, NumLit 2, NumLit 3 ])
                 (FilterCall "map" (Just [ Mult Identity Identity ])))
 
+    it "fails when using a reserved keyword in 'def'" $
+      parseExpr `shouldFailOn` "def module(): 42; 1"
+
     it "fails on missing space after 'def'" $
-      parseExpr `shouldFailOn` "deffoo(): 42;"
+      parseExpr `shouldFailOn` "deffoo(): 42; 1"
 
     it "fails on keywords in variable names" $ do
       parseExpr `shouldFailOn` "def foo(def): 42; 1"
