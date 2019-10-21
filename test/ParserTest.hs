@@ -212,7 +212,7 @@ spec_Optional =
   describe "optional suffix" $ do
     ".?" `shouldParseAs` Optional Identity
     "null?" `shouldParseAs` Optional NullLit
-    ".??" `shouldParseAs` Optional (Optional Identity)
+    (".??") `shouldParseAs` (Optional (Optional Identity))
 
 spec_Parentheses :: Spec
 spec_Parentheses =

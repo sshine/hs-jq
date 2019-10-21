@@ -140,7 +140,7 @@ suffixes e =
       , pure (ValueIterator e)                                   -- e[]
       ]
 
-    questionAfter = sym "?" $> Optional e
+    questionAfter = sym "?" >> pure (Optional e)
 
 funcDef :: Parser Expr
 funcDef = label "funcDef" $
