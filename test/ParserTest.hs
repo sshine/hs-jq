@@ -352,9 +352,11 @@ spec_NumLit = do
     it "+42" $ parseExpr `shouldFailOn` "+42"
     it "1." $ parseExpr `shouldFailOn` "1."
 
-spec_BoolLit_NullLit :: Spec
-spec_BoolLit_NullLit =
+spec_BoolLit_NullLit_NanLit_InfLit :: Spec
+spec_BoolLit_NullLit_NanLit_InfLit =
   describe "expr parses" $ do
     "true"  `shouldParseAs` BoolLit True
     "false" `shouldParseAs` BoolLit False
     "null"  `shouldParseAs` NullLit
+    "nan"   `shouldParseAs` NanLit
+    "infinite"   `shouldParseAs` InfLit

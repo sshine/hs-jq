@@ -88,6 +88,8 @@ data AbstractExpr n
     | Obj ![(ObjKey, Maybe Expr)]    -- This is what JBOL's grammar calls MkDictPair
     | List ![Expr]
     | Str !JqString
+    | NanLit
+    | InfLit
     | NumLit !n
     | BoolLit !Bool
     | NullLit

@@ -97,6 +97,8 @@ term = asum
   , NullLit <$ sym "null"
   , Paren   <$> parens expr
   , Var     <$> var
+  , NanLit  <$ sym "nan"
+  , InfLit  <$ sym "infinite"
   , try (NumLit <$> number) <|> dotExpr
   , funcDef
   , filterCall
