@@ -13,6 +13,16 @@ $ cd hs-jq
 $ stack test
 ```
 
+You can also experiment with the parser manually using GHCi:
+
+```
+$ stack ghci
+> parseExpr "def map(f): [ .[] | f ]; map(.foo)"
+Right (FuncDef "map" [FilterParam "f"]
+        (List [Pipe (ValueIterator Identity) (FilterCall "f" Nothing)])
+        (FilterCall "map" (Just [DotField "foo"])))
+```
+
 ## Why?
 
  - I think `jq` is a really cool domain-specific language, but I'm really bad
