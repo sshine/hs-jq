@@ -26,7 +26,11 @@ data JqTestCase = JqTestCase
   deriving (Eq, Show)
 
 spec_JqParserTestSuite :: Spec
-spec_JqParserTestSuite = fromFileSpec "testdata/jq.test"
+spec_JqParserTestSuite = do
+  fromFileSpec "testdata/base64.test"
+  fromFileSpec "testdata/onig.test"
+  fromFileSpec "testdata/optional.test"
+  fromFileSpec "testdata/jq.test"
 
 fromFileSpec :: FilePath -> Spec
 fromFileSpec filePath = do
