@@ -91,6 +91,13 @@ spec_FuncDef =
       parseExpr `shouldFailOn` "def foo(module): 42; 3"
       parseExpr `shouldFailOn` "def foo(and): 42; 4"
 
+spec_Keywords :: Spec
+spec_Keywords = do
+  describe "Maximal munch and keywords" $ do
+    "nulls" `shouldParseAs` FilterCall "nulls" Nothing
+    "nano" `shouldParseAs` FilterCall "nano" Nothing
+    "infinites" `shouldParseAs` FilterCall "infinites" Nothing
+
 spec_FilterCall :: Spec
 spec_FilterCall =
   describe "FilterCall" $ do
