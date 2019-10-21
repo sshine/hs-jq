@@ -122,7 +122,10 @@ suffixes :: Expr -> Parser Expr
 suffixes e =
   (suffix >>= suffixes) <|> pure e
   where
-    suffix = dotAfter <|> bracketAfter
+    suffix = asum [ dotAfter
+                  , bracketAfter
+                  , questionAfter
+                  ]
 
     dotAfter = dot *> asum
       [ DotFieldAfter e <$> lexeme (field >>= notKeyword)
@@ -136,6 +139,8 @@ suffixes e =
           , pure (IndexAfter e i) ]                              -- e[i]
       , pure (ValueIterator e)                                   -- e[]
       ]
+
+    questionAfter = sym "?" $> Optional e
 
 funcDef :: Parser Expr
 funcDef = label "funcDef" $
