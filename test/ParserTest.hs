@@ -190,6 +190,16 @@ spec_Pipe =
     two = NumLit 2
     three = NumLit 3
 
+spec_As :: Spec
+spec_As =
+  describe "as patterns" $ do
+    it "as" $ parseExpr `shouldSucceedOn` "1 as $x"
+    it "as" $ parseExpr `shouldSucceedOn` "1 as $as"
+    it "as" $ parseExpr `shouldSucceedOn` "x as $yz"
+    it "as" $ parseExpr `shouldSucceedOn` "$x as $y"
+    it "as" $ parseExpr `shouldSucceedOn` "[1,2,3] as $var"
+    it "as" $ parseExpr `shouldSucceedOn` "1 as $x | $x + 1"
+
 spec_Optional :: Spec
 spec_Optional =
   describe "optional suffix" $ do
