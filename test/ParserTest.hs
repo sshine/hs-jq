@@ -190,6 +190,12 @@ spec_Pipe =
     two = NumLit 2
     three = NumLit 3
 
+spec_Optional :: Spec
+spec_Optional =
+  describe "optional suffix" $ do
+    ".?" `shouldParseAs` Optional Identity
+    "null?" `shouldParseAs` Optional NullLit
+
 spec_Parentheses :: Spec
 spec_Parentheses =
   describe "expr parses parentheses" $ do
