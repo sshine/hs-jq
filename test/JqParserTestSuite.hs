@@ -26,8 +26,11 @@ data JqTestCase = JqTestCase
   deriving (Eq, Show)
 
 spec_JqParserTestSuite :: Spec
-spec_JqParserTestSuite = do
-  cases <- runIO (fromFile "testdata/jq.test")
+spec_JqParserTestSuite = fromFileSpec "testdata/jq.test"
+
+fromFileSpec :: FilePath -> Spec
+fromFileSpec filePath = do
+  cases <- runIO (fromFileCases filePath)
   describe "the jq test suite" $
     forM_ cases $ \JqTestCase{..} ->
       case jqtExpected of
@@ -36,8 +39,8 @@ spec_JqParserTestSuite = do
         Left _ -> it ("%%FAIL: " ++ Text.unpack jqtProgram) $
                     parseExpr `shouldFailOn` jqtProgram
 
-fromFile :: FilePath -> IO [JqTestCase]
-fromFile filePath = sanitize <$> IO.readFile filePath
+fromFileCases :: FilePath -> IO [JqTestCase]
+fromFileCases filePath = sanitize <$> IO.readFile filePath
   where
     sanitize :: Text -> [JqTestCase]
     sanitize = catMaybes
