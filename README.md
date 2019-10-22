@@ -1,7 +1,8 @@
 # hs-jq
 
-The purpose of this project is to create a competing implementation of
-[`jq`][1], the command-line JSON processor.
+[jq][1] is a command-line JSON processor. It is also a domain-specific
+combinator language, which makes it easy to analyse and optimize. This
+project aims to reimplement jq in Haskell, mostly because it's fun.
 
 ## Check it out
 
@@ -25,27 +26,25 @@ Right (FuncDef "map" [FilterParam "f"]
 
 ## Why?
 
- - I think `jq` is a really cool domain-specific language, but I'm really bad
+ - I think jq is a really cool domain-specific language, but I'm really bad
    at it.
 
    Maybe if I write an interpreter for it, I will become better at it.
- - This implementation can
-    - confirm that the original `jq` implementation works as intended.
-    - document the original `jq` syntax [as documented][8] in [JBOL][7].
+ - This implementation will
+    - confirm that the original jq implementation works as intended.
+    - document the original jq syntax [as documented][8] in [JBOL][7].
+    - prototype improvements to jq, such as syntax-preserving arithmetic,
+      arbitrary-size numbers, fusion of combinators, and linting.
  - Writing property-based tests in Haskell is a lot more convenient than
    doing so in C. This will give me an opportunity to experiment with
-   [hedgehog][2]. For example, I might like to write a generator of JSON
-   values where lists of objects share the same structure (reflecting JSON
-   documents that `jq` is suitable to transform), and given such a JSON
-   value, I might like to write a generator of `jq` expressions that validly
-   address such a value.
+   [Hedgehog][2].
  - It would be really cool if you could transform [Aeson][3] `Value`s using a
    [quasi-quoter][4]. This would give me a chance to explore how quasi-quoters
    work in Haskell.
 
    ```haskell
    slugs :: Value -> Either JqError Value
-   slugs = [jq| [ .exercises[] | .slug ] |]
+   slugs = [jq| .exercises | map(.slug) |]
    ```
 
 ## Comparable projects
@@ -60,10 +59,12 @@ Parser: 181 out of 580 tests failed.
 
 ## Contributing
 
-If you like this project, or if you're looking for an opportunity to
-practice writing open source Haskell, feel free to open an issue or a PR, or
-send me an email. A good starting point could be to look through issues
-labelled "[help wanted][9]".
+If you like this project, or if you're looking for an opportunity to practice
+writing open source Haskell, feel free to open an issue or a PR, or send me an
+email. A good starting point could be to look through issues labelled "[help
+wanted][9]".
+
+PRs received during Hacktoberfest 2019: 3
 
 [1]: https://github.com/stedolan/jq
 [2]: http://hackage.haskell.org/package/hedgehog
