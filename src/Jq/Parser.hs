@@ -55,13 +55,23 @@ exprOp :: Parser Expr
 exprOp = do
   allowComma <- asks envAllowComma
   makeExprParser term (
-    [ [ Prefix (Neg   <$ sym "-") ]
-    , [ InfixR (Pipe  <$ sym "|") ] ]
-    ++ (if allowComma
-        then [ [ InfixL (Comma    <$ sym ",") ] ]
-        else []) ++
-    [ [ InfixR (Alternative       <$ sym "//") ]
-    , [ InfixN (Assign            <$ sym "=")
+    [ [ Postfix (Optional <$ sym "?") ]          -- 10
+    , [ Prefix  (Neg      <$ sym "-") ]          -- 9
+    , [ InfixL  (Mult     <$ sym "*")            -- 8
+      , InfixL  (Div      <$ sym "/")
+      , InfixL  (Mod      <$ sym "%") ]
+    , [ InfixL  (Plus     <$ sym "+")            -- 7
+      , InfixL  (Minus    <$ sym "-") ]
+    , [ InfixN (Eq  <$ sym "==")                 -- 6
+      , InfixN (Neq <$ sym "!=")
+      , InfixN (Leq <$ sym "<=")
+      , InfixN (Geq <$ sym ">=")
+      , InfixN (Lt  <$ sym "<")
+      , InfixN (Gt  <$ sym ">")
+      ]
+    , [ InfixL (And <$ sym "and") ]              -- 5
+    , [ InfixL (Or  <$ sym "or") ]               -- 4
+    , [ InfixN (Assign            <$ sym "=")    -- 3
       , InfixN (UpdateAssign      <$ sym "|=")
       , InfixN (PlusAssign        <$ sym "+=")
       , InfixN (MinusAssign       <$ sym "-=")
@@ -70,23 +80,10 @@ exprOp = do
       , InfixN (ModAssign         <$ sym "%=")
       , InfixN (AlternativeAssign <$ sym "//=")
       ]
-    , [ InfixL (Or    <$ sym "or") ]
-    , [ InfixL (And   <$ sym "and") ]
-    , [ InfixN (Eq    <$ sym "==")
-      , InfixN (Neq   <$ sym "!=")
-      , InfixN (Leq   <$ sym "<=")
-      , InfixN (Geq   <$ sym ">=")
-      , InfixN (Lt    <$ sym "<")
-      , InfixN (Gt    <$ sym ">")
-      ]
-    , [ InfixL (Plus  <$ sym "+")
-      , InfixL (Minus <$ sym "-")
-      ]
-    , [ InfixL (Mult  <$ sym "*")
-      , InfixL (Div   <$ sym "/")
-      , InfixL (Mod   <$ sym "%")
-      ]
-    ])
+    , [ InfixR (Alternative       <$ sym "//") ]     -- 2
+    ] ++ ([[InfixL (Comma <$ sym ",")] | allowComma] -- 1
+      ++ [ [ InfixR  (Pipe  <$ sym "|") ] ]          -- 0
+    )
 
 term :: Parser Expr
 term = asum
@@ -124,7 +121,6 @@ suffixes e =
   where
     suffix = asum [ dotAfter
                   , bracketAfter
-                  , questionAfter
                   ]
 
     dotAfter = dot *> asum
@@ -139,8 +135,6 @@ suffixes e =
           , pure (IndexAfter e i) ]                              -- e[i]
       , pure (ValueIterator e)                                   -- e[]
       ]
-
-    questionAfter = sym "?" $> Optional e
 
 funcDef :: Parser Expr
 funcDef = label "funcDef" $
