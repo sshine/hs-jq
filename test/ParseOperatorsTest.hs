@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE QuasiQuotes #-}
 
 module ParseOperatorsTest where
 
@@ -23,6 +22,11 @@ import           Jq.Parser
 import           Generators
 import           TestHelpers
 
+a, b, c :: Expr
+a = FilterCall "a" Nothing
+b = FilterCall "b" Nothing
+c = FilterCall "c" Nothing
+
 spec_OperatorAssociativity :: Spec
 spec_OperatorAssociativity = do
   describe "associative operators" $ do
@@ -30,16 +34,16 @@ spec_OperatorAssociativity = do
     "a , b , c" `shouldParseAs` Comma (Comma a b) c                -- left
     "a // b // c" `shouldParseAs` Alternative a (Alternative b c)  -- right
 
-  describe "non-associative assignment operators" $ do
+  describe "non-associative assignment operators" $
     forM_ (Text.words "= |= += -= *= /= %= //=") $ \op ->
       let s = "a " <> op <> " b " <> op <> " c"
       in it ("%%FAIL: " ++ Text.unpack s) $ parseExpr `shouldFailOn` s
 
-  describe "more associative operators" $ do
+  describe "more associative operators" $
     "a or b or c" `shouldParseAs` Or (Or a b) c      -- left
     "a and b and c" `shouldParseAs` And (And a b) c  -- left
 
-  describe "more non-associative operators" $ do
+  describe "more non-associative operators" $
     forM_ (Text.words "== != < > <= >=") $ \op ->
       let s = "a " <> op <> " b " <> op <> " c"
       in it ("%%FAIL: " ++ Text.unpack s) $ parseExpr `shouldFailOn` s
@@ -50,11 +54,6 @@ spec_OperatorAssociativity = do
     "a * b * c" `shouldParseAs` Mult (Mult a b) c    -- left
     "a / b / c" `shouldParseAs` Div (Div a b) c      -- left
     "a % b % c" `shouldParseAs` Mod (Mod a b) c      -- left
-
-  where
-    a = FilterCall "a" Nothing
-    b = FilterCall "b" Nothing
-    c = FilterCall "c" Nothing
 
 spec_OperatorPrecedence :: Spec
 spec_OperatorPrecedence = do
@@ -92,10 +91,6 @@ spec_OperatorPrecedence = do
     -- TODO: * / % bind tighter than + - and the other operators above
 
   where
-    a = FilterCall "a" Nothing
-    b = FilterCall "b" Nothing
-    c = FilterCall "c" Nothing
-
     assignmentOperators =
       [ ("=",   Assign)
       , ("|=",  UpdateAssign)

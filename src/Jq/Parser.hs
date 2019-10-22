@@ -80,11 +80,9 @@ exprOp = do
       , InfixN (ModAssign         <$ sym "%=")
       , InfixN (AlternativeAssign <$ sym "//=")
       ]
-    , [ InfixR (Alternative       <$ sym "//") ] -- 2
-    ] ++ (if allowComma
-          then [[InfixL (Comma <$ sym ",")]]     -- 1
-          else []) ++
-    [ [ InfixR  (Pipe  <$ sym "|") ] ]           -- 0
+    , [ InfixR (Alternative       <$ sym "//") ]     -- 2
+    ] ++ ([[InfixL (Comma <$ sym ",")] | allowComma] -- 1
+      ++ [ [ InfixR  (Pipe  <$ sym "|") ] ]          -- 0
     )
 
 term :: Parser Expr
