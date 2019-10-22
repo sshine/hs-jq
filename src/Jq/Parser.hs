@@ -81,7 +81,7 @@ exprOp = do
       , InfixN (AlternativeAssign <$ sym "//=")
       ]
     , [ InfixR (Alternative       <$ sym "//") ]     -- 2
-    ] ++ ([[InfixL (Comma <$ sym ",")] | allowComma] -- 1
+    ] ++ [[InfixL (Comma <$ sym ",")] | allowComma] -- 1
       ++ [ [ InfixR  (Pipe  <$ sym "|") ] ]          -- 0
     )
 

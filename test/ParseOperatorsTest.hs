@@ -39,7 +39,7 @@ spec_OperatorAssociativity = do
       let s = "a " <> op <> " b " <> op <> " c"
       in it ("%%FAIL: " ++ Text.unpack s) $ parseExpr `shouldFailOn` s
 
-  describe "more associative operators" $
+  describe "more associative operators" $ do
     "a or b or c" `shouldParseAs` Or (Or a b) c      -- left
     "a and b and c" `shouldParseAs` And (And a b) c  -- left
 
