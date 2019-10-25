@@ -91,11 +91,11 @@ term = asum
   , List    <$> list
   , Str     <$> string
   , BoolLit <$> bool
-  , NullLit <$ sym "null"
+  , NullLit <$ try (sym "null" >> notFollowedBy ident)
   , Paren   <$> parens expr
   , Var     <$> var
-  , NanLit  <$ sym "nan"
-  , InfLit  <$ sym "infinite"
+  , NanLit  <$ try (sym "nan" >> notFollowedBy ident)
+  , InfLit  <$ try (sym "infinite" >> notFollowedBy ident)
   , try (NumLit <$> number) <|> dotExpr
   , funcDef
   , filterCall
