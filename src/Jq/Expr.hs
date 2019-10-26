@@ -43,6 +43,7 @@ data AbstractExpr n
     | Or !Expr !Expr                 -- 'or'
     | And !Expr !Expr                -- 'and'
     | Alternative !Expr !Expr        -- '//'
+    | AltDestruct !Expr !Expr           -- '?//'
     | AlternativeAssign !Expr !Expr  -- '//='
     | UpdateAssign !Expr !Expr       -- '|='
     | Pipe !Expr !Expr               -- '|'
@@ -63,7 +64,6 @@ data AbstractExpr n
     | Gt !Expr !Expr                 -- '>'
     | Leq !Expr !Expr                -- '<='
     | Geq !Expr !Expr                -- '>='
-    | AltDestr !Expr !Expr           -- '?//'
 
       -- Prefix/postfix
     | Optional !Expr                 -- suffix '?'

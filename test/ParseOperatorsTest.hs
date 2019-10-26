@@ -124,7 +124,7 @@ spec_OperatorPrecedence = do
     -- TODO: * / % bind tighter than + - and the other operators above
 
     describe "alternative destructure '?//' is parsed if it's possible" $ do
-      "a ?// b" `shouldParseAs` AltDestr a b
+      "a ?// b" `shouldParseAs` AltDestruct a b
       "a ?" `shouldParseAs` Optional a
       "null? / 4" `shouldParseAs` Div (Optional NullLit) (NumLit 4)
       "null ?/ 4" `shouldParseAs` Div (Optional NullLit) (NumLit 4)
