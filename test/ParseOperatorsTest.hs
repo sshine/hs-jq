@@ -77,7 +77,7 @@ spec_OperatorAssociativity = do
     "a and b and c" `shouldParseAs` And (And a b) c  -- left
 
   describe "more non-associative operators" $
-    forM_ (Text.words "== != < > <= >=") $ \op ->
+    forM_ (Text.words "== != < > <= >= ?//") $ \op ->
       let s = "a " <> op <> " b " <> op <> " c"
       in it ("%%FAIL: " ++ Text.unpack s) $ parseExpr `shouldFailOn` s
 
@@ -123,6 +123,11 @@ spec_OperatorPrecedence = do
     -- TODO: comparison operators bind tighter than the operators above
     -- TODO: * / % bind tighter than + - and the other operators above
 
+    describe "'?//' is parsed if it's possible" $ do
+      "a ?// b" `shouldParseAs` AltDestr a b
+      "a ?" `shouldParseAs` Optional a
+
+  
   where
     assignmentOperators =
       [ ("=",   Assign)
