@@ -55,7 +55,7 @@ Right (FuncDef "map" [FilterParam "f"]
 
 ## Status
 
-Parser: 181 out of 580 tests failed.
+Parser: 128 out of 639 tests failed.
 
 ## Contributing
 
