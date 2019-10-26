@@ -27,6 +27,39 @@ a = FilterCall "a" Nothing
 b = FilterCall "b" Nothing
 c = FilterCall "c" Nothing
 
+spec_OperatorsParse :: Spec
+spec_OperatorsParse = do
+  describe "binary operators parse correctly" $ do
+    "a * b" `shouldParseAs` Mult a b
+    "a / b" `shouldParseAs` Div a b
+    "a % b" `shouldParseAs` Mod a b
+
+    "a + b" `shouldParseAs` Plus a b
+    "a - b" `shouldParseAs` Minus a b
+
+    "a == b" `shouldParseAs` Eq a b
+    "a != b" `shouldParseAs` Neq a b
+    "a <= b" `shouldParseAs` Leq a b
+    "a >= b" `shouldParseAs` Geq a b
+    "a < b" `shouldParseAs` Lt a b
+    "a > b" `shouldParseAs` Gt a b
+
+    "a and b" `shouldParseAs` And a b
+    "a or b" `shouldParseAs` Or a b
+
+    "a = b" `shouldParseAs` Assign a b
+    "a |= b" `shouldParseAs` UpdateAssign a b
+    "a += b" `shouldParseAs` PlusAssign a b
+    "a -= b" `shouldParseAs` MinusAssign a b
+    "a *= b" `shouldParseAs` MultAssign a b
+    "a /= b" `shouldParseAs` DivAssign a b
+    "a %= b" `shouldParseAs` ModAssign a b
+    "a //= b" `shouldParseAs` AlternativeAssign a b
+
+    "a // b" `shouldParseAs` Alternative a b
+    "a , b" `shouldParseAs` Comma a b
+    "a | b" `shouldParseAs` Pipe a b
+
 spec_OperatorAssociativity :: Spec
 spec_OperatorAssociativity = do
   describe "associative operators" $ do
