@@ -56,22 +56,22 @@ exprOp = do
   allowComma <- asks envAllowComma
   makeExprParser term (
     [ [ Postfix (Optional <$ sym "?") ]          -- 10
-    , [ Prefix  (Neg      <$ sym "-") ]          -- 9
-    , [ InfixL  (Mult     <$ sym "*")            -- 8
-      , InfixL  (Div      <$ sym "/")
-      , InfixL  (Mod      <$ sym "%") ]
-    , [ InfixL  (Plus     <$ sym "+")            -- 7
-      , InfixL  (Minus    <$ sym "-") ]
+    , [ Prefix  (Neg      <$ try (sym "-" >> notFollowedBy (sym "="))) ]          -- 9
+    , [ InfixL  (Mult     <$ try (sym "*" >> notFollowedBy (sym "=")))            -- 8
+      , InfixL  (Div      <$ try (sym "/" >> notFollowedBy (sym "=" <|> sym "/")))
+      , InfixL  (Mod      <$ try (sym "%" >> notFollowedBy (sym "="))) ]
+    , [ InfixL  (Plus     <$ try (sym "+" >> notFollowedBy (sym "=")))            -- 7
+      , InfixL  (Minus    <$ try (sym "-" >> notFollowedBy (sym "="))) ]
     , [ InfixN (Eq  <$ sym "==")                 -- 6
       , InfixN (Neq <$ sym "!=")
       , InfixN (Leq <$ sym "<=")
       , InfixN (Geq <$ sym ">=")
-      , InfixN (Lt  <$ sym "<")
-      , InfixN (Gt  <$ sym ">")
+      , InfixN (Lt  <$ try (sym "<" >> notFollowedBy (sym "=")))
+      , InfixN (Gt  <$ try (sym ">" >> notFollowedBy (sym "=")))
       ]
     , [ InfixL (And <$ sym "and") ]              -- 5
     , [ InfixL (Or  <$ sym "or") ]               -- 4
-    , [ InfixN (Assign            <$ sym "=")    -- 3
+    , [ InfixN (Assign            <$ try (sym "=" >> notFollowedBy (sym "=")))    -- 3
       , InfixN (UpdateAssign      <$ sym "|=")
       , InfixN (PlusAssign        <$ sym "+=")
       , InfixN (MinusAssign       <$ sym "-=")
@@ -82,7 +82,7 @@ exprOp = do
       ]
     , [ InfixR (Alternative       <$ sym "//") ]     -- 2
     ] ++ [[InfixL (Comma <$ sym ",")] | allowComma] -- 1
-      ++ [ [ InfixR  (Pipe  <$ sym "|") ] ]          -- 0
+      ++ [ [ InfixR  (Pipe  <$ try (sym "|" >> notFollowedBy (sym "="))) ] ]          -- 0
     )
 
 term :: Parser Expr
@@ -91,11 +91,11 @@ term = asum
   , List    <$> list
   , Str     <$> string
   , BoolLit <$> bool
-  , NullLit <$ sym "null"
+  , NullLit <$ try (sym "null" >> notFollowedBy ident)
   , Paren   <$> parens expr
   , Var     <$> var
-  , NanLit  <$ sym "nan"
-  , InfLit  <$ sym "infinite"
+  , NanLit  <$ try (sym "nan" >> notFollowedBy ident)
+  , InfLit  <$ try (sym "infinite" >> notFollowedBy ident)
   , try (NumLit <$> number) <|> dotExpr
   , funcDef
   , filterCall

@@ -3,6 +3,8 @@
 
 module ParserTest where
 
+import           Control.Monad
+
 import           Data.Char (chr, isHexDigit)
 import           Data.Foldable (for_)
 import qualified Data.Text as Text
@@ -94,9 +96,9 @@ spec_FuncDef =
 spec_Keywords :: Spec
 spec_Keywords = do
   describe "Maximal munch and keywords" $ do
-    "nulls" `shouldParseAs` FilterCall "nulls" Nothing
-    "nano" `shouldParseAs` FilterCall "nano" Nothing
-    "infinites" `shouldParseAs` FilterCall "infinites" Nothing
+    forM_ keywords $ \kw -> do
+      (kw <> "s") `shouldParseAs` FilterCall (kw <> "s") Nothing
+      ("s" <> kw) `shouldParseAs` FilterCall ("s" <> kw) Nothing
 
 spec_FilterCall :: Spec
 spec_FilterCall =
