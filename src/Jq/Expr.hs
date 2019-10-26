@@ -63,6 +63,7 @@ data AbstractExpr n
     | Gt !Expr !Expr                 -- '>'
     | Leq !Expr !Expr                -- '<='
     | Geq !Expr !Expr                -- '>='
+    | AltDestr !Expr !Expr           -- '?//'
 
       -- Prefix/postfix
     | Optional !Expr                 -- suffix '?'
