@@ -127,7 +127,6 @@ spec_OperatorPrecedence = do
       "a ?// b" `shouldParseAs` AltDestr a b
       "a ?" `shouldParseAs` Optional a
 
-  
   where
     assignmentOperators =
       [ ("=",   Assign)
