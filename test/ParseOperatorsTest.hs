@@ -123,9 +123,11 @@ spec_OperatorPrecedence = do
     -- TODO: comparison operators bind tighter than the operators above
     -- TODO: * / % bind tighter than + - and the other operators above
 
-    describe "'?//' is parsed if it's possible" $ do
+    describe "alternative destructure '?//' is parsed if it's possible" $ do
       "a ?// b" `shouldParseAs` AltDestr a b
       "a ?" `shouldParseAs` Optional a
+      "null? / 4" `shouldParseAs` Div (Optional NullLit) (NumLit 4)
+      "null ?/ 4" `shouldParseAs` Div (Optional NullLit) (NumLit 4)
 
   where
     assignmentOperators =
