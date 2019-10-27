@@ -101,6 +101,7 @@ term = asum
   , funcDef
   , tryCatch
   , filterCall
+  , format
   ] >>= suffixes
 
 dotExpr :: Parser Expr
@@ -116,6 +117,9 @@ filterCall :: Parser Expr
 filterCall =
   FilterCall <$> lexeme (ident >>= notKeyword)
              <*> optional (parens (expr `sepBy` sym ";"))
+
+format :: Parser Expr
+format = Format <$> (chunk "@" >> (field >>= notKeyword)) <*> (optional string)
 
 suffixes :: Expr -> Parser Expr
 suffixes e =

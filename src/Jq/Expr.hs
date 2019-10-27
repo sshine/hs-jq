@@ -97,6 +97,8 @@ data AbstractExpr n
 
       -- Explicit parentheses
     | Paren !Expr
+
+    | Format !Ident !(Maybe JqString)
     deriving (Eq, Show)
 
 data ObjKey = FieldKey !Ident
