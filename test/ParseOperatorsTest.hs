@@ -54,9 +54,9 @@ spec_OperatorsParse = do
     "a *= b" `shouldParseAs` MultAssign a b
     "a /= b" `shouldParseAs` DivAssign a b
     "a %= b" `shouldParseAs` ModAssign a b
-    "a //= b" `shouldParseAs` AlternativeAssign a b
+    "a //= b" `shouldParseAs` AltAssign a b
 
-    "a // b" `shouldParseAs` Alternative a b
+    "a // b" `shouldParseAs` Alt a b
     "a , b" `shouldParseAs` Comma a b
     "a | b" `shouldParseAs` Pipe a b
 
@@ -65,7 +65,7 @@ spec_OperatorAssociativity = do
   describe "associative operators" $ do
     "a | b | c" `shouldParseAs` Pipe a (Pipe b c)                  -- right
     "a , b , c" `shouldParseAs` Comma (Comma a b) c                -- left
-    "a // b // c" `shouldParseAs` Alternative a (Alternative b c)  -- right
+    "a // b // c" `shouldParseAs` Alt a (Alt b c)  -- right
 
   describe "non-associative assignment operators" $
     forM_ (Text.words "= |= += -= *= /= %= //=") $ \op ->
@@ -95,10 +95,10 @@ spec_OperatorPrecedence = do
     "a , b | c" `shouldParseAs` Pipe (Comma a b) c
 
   describe "// binds tighter than | ," $ do
-    "a // b | c" `shouldParseAs` Pipe (Alternative a b) c
-    "a | b // c" `shouldParseAs` Pipe a (Alternative b c)
-    "a // b , c" `shouldParseAs` Comma (Alternative a b) c
-    "a , b // c" `shouldParseAs` Comma a (Alternative b c)
+    "a // b | c" `shouldParseAs` Pipe (Alt a b) c
+    "a | b // c" `shouldParseAs` Pipe a (Alt b c)
+    "a // b , c" `shouldParseAs` Comma (Alt a b) c
+    "a , b // c" `shouldParseAs` Comma a (Alt b c)
 
   describe "non-associative assignment operators bind tighter than | , //" $ do
     -- -- The following tests are generalized for all assignment operators:
@@ -106,8 +106,8 @@ spec_OperatorPrecedence = do
     -- "a | b = c" `shouldParseAs` Pipe a (Assign b c)
     -- "a = b , c" `shouldParseAs` Comma (Assign a b) c
     -- "a , b = c" `shouldParseAs` Comma a (Assign b c)
-    -- "a = b // c" `shouldParseAs` Alternative (Assign a b) c
-    -- "a // b = c" `shouldParseAs` Alternative a (Assign b c)
+    -- "a = b // c" `shouldParseAs` Alt (Assign a b) c
+    -- "a // b = c" `shouldParseAs` Alt a (Assign b c)
 
     forM_ assignmentOperators $ \(op, exprOp) ->
       forM_ lowPrecOperators $ \(lowOp, lowExprOp) -> do
@@ -138,10 +138,10 @@ spec_OperatorPrecedence = do
       , ("*=",  MultAssign)
       , ("/=",  DivAssign)
       , ("%=",  ModAssign)
-      , ("//=", AlternativeAssign)
+      , ("//=", AltAssign)
       ]
 
     lowPrecOperators =
       [ ("|", Pipe)
       , (",", Comma)
-      , ("//", Alternative) ]
+      , ("//", Alt) ]
