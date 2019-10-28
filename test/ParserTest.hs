@@ -94,8 +94,8 @@ spec_FuncDef =
       parseExpr `shouldFailOn` "def foo(and): 42; 4"
 
 spec_Keywords :: Spec
-spec_Keywords = do
-  describe "Maximal munch and keywords" $ do
+spec_Keywords =
+  describe "Maximal munch and keywords" $
     forM_ keywords $ \kw -> do
       (kw <> "s") `shouldParseAs` FilterCall (kw <> "s") Nothing
       ("s" <> kw) `shouldParseAs` FilterCall ("s" <> kw) Nothing

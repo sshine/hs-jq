@@ -25,7 +25,7 @@ signGen' = Gen.element ["", "-"]
 
 integerGen :: Gen Text
 integerGen = Text.pack . show <$>
-      (Gen.integral $ Range.exponential 1 (10^309))
+  Gen.integral (Range.exponential 1 (10^309))
 
 decBefore :: Gen Text
 decBefore = Gen.constant "." <> integerGen
@@ -43,7 +43,7 @@ scientificNumberGen = base <> e <> signGen <> expGen
     base = Gen.choice [numberGen, fractionalGen, optFractionalGen]
     e = Gen.element ["e", "E"]
     expGen = Text.pack . show <$>
-      (Gen.integral (Range.linear 0 (10^309)))
+      Gen.integral (Range.linear 0 (10^309))
 
 fractionalGen :: Gen Text
 fractionalGen = signGen' <> integerGen <> Gen.constant "." <> integerGen

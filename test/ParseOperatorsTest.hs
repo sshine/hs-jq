@@ -28,7 +28,7 @@ b = FilterCall "b" Nothing
 c = FilterCall "c" Nothing
 
 spec_OperatorsParse :: Spec
-spec_OperatorsParse = do
+spec_OperatorsParse =
   describe "binary operators parse correctly" $ do
     "a * b" `shouldParseAs` Mult a b
     "a / b" `shouldParseAs` Div a b

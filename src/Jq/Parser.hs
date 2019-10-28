@@ -37,8 +37,8 @@ newtype Parser a =
            , MonadParsec Void Text
            )
 
-data JqParserEnv = JqParserEnv
-  { envAllowComma :: !Bool
+newtype JqParserEnv = JqParserEnv
+  { envAllowComma :: Bool
   }
 
 initialEnv :: JqParserEnv
