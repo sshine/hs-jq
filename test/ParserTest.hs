@@ -175,13 +175,6 @@ spec_DotAndBracketIndexing = do
     ".[][][]" `shouldParseAs` ValueIterator (ValueIterator (ValueIterator Identity))
     ".foo.bar.baz" `shouldParseAs` DotFieldAfter (DotFieldAfter (DotField "foo") "bar") "baz"
 
-  where
-    zero = NumLit 0
-    one = NumLit 1
-    two = NumLit 2
-    three = NumLit 3
-    objFoo = Obj [ (FieldKey "foo", Just one) ]
-
 spec_Pipe :: Spec
 spec_Pipe =
   describe "expr parses pipes" $ do
@@ -194,20 +187,26 @@ spec_Pipe =
       Pipe one (Paren (Pipe two three))
     "(1 | 2) | 3" `shouldParseAs`
       Pipe (Paren (Pipe one two)) three
-  where
-    one = NumLit 1
-    two = NumLit 2
-    three = NumLit 3
 
 spec_As :: Spec
 spec_As =
-  describe "as patterns" $ do
-    it "as" $ parseExpr `shouldSucceedOn` "1 as $x"
-    it "as" $ parseExpr `shouldSucceedOn` "1 as $as"
-    it "as" $ parseExpr `shouldSucceedOn` "x as $yz"
-    it "as" $ parseExpr `shouldSucceedOn` "$x as $y"
-    it "as" $ parseExpr `shouldSucceedOn` "[1,2,3] as $var"
-    it "as" $ parseExpr `shouldSucceedOn` "1 as $x | $x + 1"
+  describe "as operator" $ do
+    "1 as $x" `shouldParseAs` As one (VarPat "x")
+    "1 as $yz_1" `shouldParseAs` As one (VarPat "yz_1")
+    "$x as $y" `shouldParseAs` As (Var "x") (VarPat "y")
+    "[1,2,3] as $var" `shouldParseAs` As (List [one, two, three]) (VarPat "var")
+    "1 as $x | $x + 1" `shouldParseAs` Pipe (As one (VarPat "x")) (Plus (Var "x") one)
+
+    it "%%FAIL: 1 as $as" $ parseExpr `shouldFailOn` "1 as $as"
+
+    "$x as []" `shouldParseAs` As (Var "x") (ArrayPat [])
+    "$x as [$a,$b] | $a + $b" `shouldParseAs`
+      Pipe (As (Var "x") (ArrayPat [VarPat "a",VarPat "b"])) (Plus (Var "a") (Var "b"))
+    "$x as [$a,[$b,$c]] | $a + $b + $c" `shouldParseAs`
+      Pipe (As (Var "x") (ArrayPat [VarPat "a", ArrayPat [VarPat "b", VarPat "c"]]))
+           (Plus (Plus (Var "a") (Var "b")) (Var "c"))
+
+    -- TODO: Test object patterns!
 
 spec_Optional :: Spec
 spec_Optional =
@@ -224,8 +223,6 @@ spec_Parentheses =
     "([1, ([1, ((1))]), 1])"
       `shouldParseAs`
         Paren (List [one, Paren (List [one, Paren (Paren one)]), one])
-  where
-    one = NumLit 1
 
 spec_Obj :: Spec
 spec_Obj =
@@ -339,7 +336,6 @@ hprop_UnicodeEscape = property $ do
       mkStrEscExpr . chr . fst <$> hexadecimal (Text.pack h)
       where h = takeWhile isHexDigit $ drop 3 s
 
-
 hprop_NumLit :: Property
 hprop_NumLit = property $ do
   n <- forAll jsonNumberGen
@@ -380,3 +376,11 @@ spec_BoolLit_NullLit_NanLit_InfLit =
     "null"  `shouldParseAs` NullLit
     "nan"   `shouldParseAs` NanLit
     "infinite"   `shouldParseAs` InfLit
+
+zero, one, two, three, objFoo :: Expr
+zero = NumLit 0
+one = NumLit 1
+two = NumLit 2
+three = NumLit 3
+
+objFoo = Obj [ (FieldKey "foo", Just one) ]
