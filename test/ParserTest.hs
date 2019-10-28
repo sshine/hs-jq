@@ -225,7 +225,7 @@ spec_Parentheses =
         Paren (List [one, Paren (List [one, Paren (Paren one)]), one])
 
 spec_Obj :: Spec
-spec_Obj =
+spec_Obj = do
   describe "expr parses simple objects" $ do
     "{}" `shouldParseAs` Obj []
 
@@ -243,8 +243,16 @@ spec_Obj =
 
     "{foo: 1, bar: 2}"
       `shouldParseAs`
-        Obj [ (FieldKey "foo", Just (NumLit 1))
-            , (FieldKey "bar", Just (NumLit 2))
+        Obj [ (FieldKey "foo", Just one)
+            , (FieldKey "bar", Just two)
+            ]
+
+  describe "keywords as object keys" $
+    "{if: 1, then: 2, else: 3}"
+      `shouldParseAs`
+        Obj [ (FieldKey "if", Just one)
+            , (FieldKey "then", Just two)
+            , (FieldKey "else", Just three)
             ]
 
 spec_List :: Spec
