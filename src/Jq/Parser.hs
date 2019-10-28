@@ -54,37 +54,36 @@ expr = exprOp
 exprOp :: Parser Expr
 exprOp = do
   allowComma <- asks envAllowComma
-  makeExprParser term (
-    [ [ InfixN (AltDestruct  <$ sym "?//") ]        -- 11
-    , [ Postfix (Optional <$ try (sym "?" >> notFollowedBy (sym "//"))) ] -- 10
-    , [ Prefix  (Neg      <$ try (sym "-" >> notFollowedBy (sym "="))) ]          -- 9
-    , [ InfixL  (Mult     <$ try (sym "*" >> notFollowedBy (sym "=")))            -- 8
-      , InfixL  (Div      <$ try (sym "/" >> notFollowedBy (sym "=" <|> sym "/")))
-      , InfixL  (Mod      <$ try (sym "%" >> notFollowedBy (sym "="))) ]
-    , [ InfixL  (Plus     <$ try (sym "+" >> notFollowedBy (sym "=")))            -- 7
-      , InfixL  (Minus    <$ try (sym "-" >> notFollowedBy (sym "="))) ]
-    , [ InfixN (Eq  <$ sym "==")                 -- 6
+  makeExprParser term $
+    [ [ InfixN  (AltDestruct <$ sym "?//") ]
+    , [ Postfix (Optional    <$ try (sym "?" >> notFollowedBy (sym "//"))) ]
+    , [ Prefix  (Neg         <$ try (sym "-" >> notFollowedBy (sym "="))) ]
+    , [ InfixL  (Mult        <$ try (sym "*" >> notFollowedBy (sym "=")))
+      , InfixL  (Div         <$ try (sym "/" >> notFollowedBy (sym "=" <|> sym "/")))
+      , InfixL  (Mod         <$ try (sym "%" >> notFollowedBy (sym "="))) ]
+    , [ InfixL  (Plus        <$ try (sym "+" >> notFollowedBy (sym "=")))
+      , InfixL  (Minus       <$ try (sym "-" >> notFollowedBy (sym "="))) ]
+    , [ InfixN (Eq  <$ sym "==")
       , InfixN (Neq <$ sym "!=")
       , InfixN (Leq <$ sym "<=")
       , InfixN (Geq <$ sym ">=")
       , InfixN (Lt  <$ try (sym "<" >> notFollowedBy (sym "=")))
       , InfixN (Gt  <$ try (sym ">" >> notFollowedBy (sym "=")))
       ]
-    , [ InfixL (And <$ sym "and") ]              -- 5
-    , [ InfixL (Or  <$ sym "or") ]               -- 4
-    , [ InfixN (Assign            <$ try (sym "=" >> notFollowedBy (sym "=")))    -- 3
+    , [ InfixL (And <$ sym "and") ]
+    , [ InfixL (Or  <$ sym "or") ]
+    , [ InfixN (Assign            <$ try (sym "=" >> notFollowedBy (sym "=")))
       , InfixN (UpdateAssign      <$ sym "|=")
       , InfixN (PlusAssign        <$ sym "+=")
       , InfixN (MinusAssign       <$ sym "-=")
       , InfixN (MultAssign        <$ sym "*=")
       , InfixN (DivAssign         <$ sym "/=")
       , InfixN (ModAssign         <$ sym "%=")
-      , InfixN (AlternativeAssign <$ sym "//=")
+      , InfixN (AltAssign         <$ sym "//=")
       ]
-    , [ InfixR (Alternative       <$ sym "//") ]     -- 2
-    ] ++ [[InfixL (Comma <$ sym ",")] | allowComma] -- 1
-      ++ [ [ InfixR  (Pipe  <$ try (sym "|" >> notFollowedBy (sym "="))) ] ]          -- 0
-    )
+    , [ InfixR (Alt               <$ sym "//") ]
+    ] ++ [[InfixL (Comma <$ sym ",")] | allowComma]
+      ++ [ [ InfixR  (Pipe <$ try (sym "|" >> notFollowedBy (sym "="))) ] ]
 
 term :: Parser Expr
 term = asum
