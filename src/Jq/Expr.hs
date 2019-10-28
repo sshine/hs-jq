@@ -107,8 +107,17 @@ data Param = ValueParam !Ident      -- '$' ident
            | FilterParam !Ident     -- e.g. 'def foo(f): f | f'
            deriving (Show, Eq)
 
-data Pattern = Ident !Text -- '... as $var'
+data Pattern = VarPat !Text                    -- '... as $var'
+             | ArrayPat ![Pattern]             -- '... as [ ... ]'
+             | ObjPat ![(ObjKeyPat, Pattern)]  -- '... as { ... }'
              deriving (Eq, Show)
+
+-- Corresponds to 'ObjPat' in JBOL grammar
+data ObjKeyPat = ObjKeyVarPat !Ident    -- '$' IDENT
+               | ObjKeyIdentPat !Ident  -- IDENT
+               | ObjKeyStrPat !JqString -- "..."
+               | ObjKeyExprPat !Expr    -- XXX
+               deriving (Eq, Show)
 
 data StrChunk = StrLit !Text
               | StrEsc !Char

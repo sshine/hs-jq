@@ -82,7 +82,8 @@ exprOp = do
       , InfixN (AltAssign         <$ sym "//=")
       ]
     , [ InfixR (Alt               <$ sym "//") ]
-    ] ++ [[InfixL (Comma <$ sym ",")] | allowComma]
+    ] ++ [ [ InfixL  (Comma       <$ sym ",") ] | allowComma ]
+      ++ [ [ Postfix (flip As     <$> (sym "as" >> pattern')) ] ]
       ++ [ [ InfixR  (Pipe <$ try (sym "|" >> notFollowedBy (sym "="))) ] ]
 
 term :: Parser Expr
@@ -146,7 +147,7 @@ funcDef = label "funcDef" $
 
 funcParam :: Parser Param
 funcParam = asum
-  [ ValueParam <$> (chunk "$" *> ident)
+  [ ValueParam <$> var
   , FilterParam <$> ident
   ]
 
@@ -164,10 +165,26 @@ list :: Parser [Expr]
 list = brackets . withoutComma $ expr `sepBy` sym ","
 
 var :: Parser Text
-var = chunk "$" >> (field >>= notKeyword)
+var = lexeme $ chunk "$" >> (field >>= notKeyword)
+
+pattern' :: Parser Pattern
+pattern' = asum
+  [ VarPat   <$> var
+  , ArrayPat <$> (brackets . withoutComma) (pattern' `sepBy` sym ",")
+  , ObjPat   <$> braces (objPatElem `sepBy` sym ",")
+  ]
+
+objPatElem :: Parser (ObjKeyPat, Pattern)
+objPatElem = (,) <$> key <*> pattern'
+  where
+    key = asum [ ObjKeyVarPat   <$> var
+               , ObjKeyIdentPat <$> ident
+               , ObjKeyStrPat   <$> string
+               , ObjKeyExprPat  <$> parens expr
+               ]
 
 -- TODO: Does not differentiate in AST between \n and \u0020.
-string :: Parser [StrChunk]
+string :: Parser JqString
 string = between (sym "\"") (sym "\"") (many (strLit <|> strEsc))
   where
     strLit, strEsc, strEscChar, strEscInterp :: Parser StrChunk
