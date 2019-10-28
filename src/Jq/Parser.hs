@@ -55,7 +55,8 @@ exprOp :: Parser Expr
 exprOp = do
   allowComma <- asks envAllowComma
   makeExprParser term (
-    [ [ Postfix (Optional <$ sym "?") ]          -- 10
+    [ [ InfixN (AltDestruct  <$ sym "?//") ]        -- 11
+    , [ Postfix (Optional <$ try (sym "?" >> notFollowedBy (sym "//"))) ] -- 10
     , [ Prefix  (Neg      <$ try (sym "-" >> notFollowedBy (sym "="))) ]          -- 9
     , [ InfixL  (Mult     <$ try (sym "*" >> notFollowedBy (sym "=")))            -- 8
       , InfixL  (Div      <$ try (sym "/" >> notFollowedBy (sym "=" <|> sym "/")))
