@@ -99,6 +99,7 @@ term = asum
   , InfLit  <$ try (sym "infinite" >> notFollowedBy ident)
   , try (NumLit <$> number) <|> dotExpr
   , funcDef
+  , tryCatch
   , filterCall
   ] >>= suffixes
 
@@ -163,6 +164,12 @@ objElem = (,) <$> key <*> value
 
 list :: Parser [Expr]
 list = brackets . withoutComma $ expr `sepBy` sym ","
+
+tryCatch :: Parser Expr
+tryCatch = label "tryCatch" $
+  sym "try " $> TryCatch
+            <*> expr
+            <*> optional (sym "catch " *> expr)
 
 var :: Parser Text
 var = lexeme $ chunk "$" >> (field >>= notKeyword)
