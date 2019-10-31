@@ -157,7 +157,7 @@ obj = braces (objElem `sepBy` sym ",")
 objElem :: Parser (ObjKey, Maybe Expr)
 objElem = (,) <$> key <*> value
   where
-    key = asum [ FieldKey <$> lexeme (field >>= notKeyword)
+    key = asum [ FieldKey <$> lexeme field
                , FieldExpr <$> expr ] -- FIXME: Too permissive.
     value = optional (sym ":" *> expr)
 
