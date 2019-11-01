@@ -119,7 +119,7 @@ filterCall =
              <*> optional (parens (expr `sepBy` sym ";"))
 
 format :: Parser Expr
-format = Format <$> (chunk "@" >> (field >>= notKeyword)) <*> optional string
+format = Format <$> (chunk "@" >> (field >>= notKeyword)) <*> optional (space >> string)
 
 suffixes :: Expr -> Parser Expr
 suffixes e =
