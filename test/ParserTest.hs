@@ -385,6 +385,15 @@ spec_BoolLit_NullLit_NanLit_InfLit =
     "nan"   `shouldParseAs` NanLit
     "infinite"   `shouldParseAs` InfLit
 
+spec_Format :: Spec
+spec_Format =
+  describe "FORMAT parses" $ do
+    "@base64" `shouldParseAs` Format "base64" Nothing
+    "@base64 \"$$$\"" `shouldParseAs` Format "base64" (Just $ [StrLit "$$$"])
+    "@base64 \"\\(\"$$$\")\"" `shouldParseAs` Format "base64" (Just $ [StrInterp (Str [StrLit "$$$"])])
+    "@42 \"123\"" `shouldParseAs` Format "42" (Just $ [StrLit "123"])
+    "@def \"$234$\"" `shouldParseAs` Format "def" (Just $ [StrLit "$234$"])
+
 zero, one, two, three, objFoo :: Expr
 zero = NumLit 0
 one = NumLit 1
