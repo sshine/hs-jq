@@ -391,6 +391,8 @@ spec_Format =
     "@base64" `shouldParseAs` Format "base64" Nothing
     "@base64 \"$$$\"" `shouldParseAs` Format "base64" (Just $ [StrLit "$$$"])
     "@base64 \"\\(\"$$$\")\"" `shouldParseAs` Format "base64" (Just $ [StrInterp (Str [StrLit "$$$"])])
+    "@42 \"123\"" `shouldParseAs` Format "42" (Just $ [StrLit "123"])
+    "@def \"$234$\"" `shouldParseAs` Format "def" (Just $ [StrLit "$234$"])
 
 zero, one, two, three, objFoo :: Expr
 zero = NumLit 0
@@ -399,4 +401,3 @@ two = NumLit 2
 three = NumLit 3
 
 objFoo = Obj [ (FieldKey "foo", Just one) ]
-
