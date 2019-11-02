@@ -119,7 +119,9 @@ filterCall =
              <*> optional (parens (expr `sepBy` sym ";"))
 
 format :: Parser Expr
-format = Format <$> (chunk "@" >> (field >>= notKeyword)) <*> optional (space >> string)
+format = Format <$> formatString <*> optional string
+  where
+    formatString = lexeme $ chunk "@" >> (Text.cons <$> satisfy isAZ09_ <*> takeWhileP Nothing isAZ09_)
 
 suffixes :: Expr -> Parser Expr
 suffixes e =
