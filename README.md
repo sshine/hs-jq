@@ -64,7 +64,7 @@ writing open source Haskell, feel free to open an issue or a PR, or send me an
 email. A good starting point could be to look through issues labelled "[help
 wanted][9]".
 
-PRs received during Hacktoberfest 2019: 3
+In connection to Hacktoberfest 2019 I received 9 PRs. Thanks a bunch, guys!
 
 [1]: https://github.com/stedolan/jq
 [2]: http://hackage.haskell.org/package/hedgehog
