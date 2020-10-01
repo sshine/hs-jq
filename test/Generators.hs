@@ -111,7 +111,7 @@ bareSchemaGen =
     ]
 
 schemaGen :: GenNullables -> Gen TaggedSchema
-schemaGen nullables = runReaderT schemaGen' nullables
+schemaGen = runReaderT schemaGen'
 
 schemaElemGen :: TaggedSchema -> Gen A.Value
 schemaElemGen (bareSchema, False) = bareSchemaElemGen bareSchema
@@ -127,5 +127,5 @@ bareSchemaElemGen bareSchema = case bareSchema of
   SObject l -> object <$> traverse objectPairGen l
   SString   -> A.String <$> textGen
 
-objectPairGen :: KeyValue kv => (Text, TaggedSchema) -> Gen (kv)
+objectPairGen :: KeyValue kv => (Text, TaggedSchema) -> Gen kv
 objectPairGen (k, s) = (k .=) <$> schemaElemGen s
