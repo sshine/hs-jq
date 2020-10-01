@@ -1,9 +1,19 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Generators where
 
+import           Control.Arrow (second)
+import           Control.Monad.Reader
+import           Data.Scientific (fromFloatDigits)
+import           Data.Aeson as A
+import           Data.Containers.ListUtils
+import           Data.List (nubBy)
+import           Data.Vector as V
 import           Data.Text (Text)
 import qualified Data.Text as Text
+import           Jq.Expr
 import           Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
@@ -35,7 +45,7 @@ decAfter = integerGen <> Gen.constant "."
 
 -- | Number type generators
 numberGen :: Gen Text
-numberGen = signGen' <> integerGen
+numberGen = signGen <> integerGen
 
 scientificNumberGen :: Gen Text
 scientificNumberGen = base <> e <> signGen <> expGen
@@ -46,10 +56,10 @@ scientificNumberGen = base <> e <> signGen <> expGen
       Gen.integral (Range.linear 0 (10^309))
 
 fractionalGen :: Gen Text
-fractionalGen = signGen' <> integerGen <> Gen.constant "." <> integerGen
+fractionalGen = signGen <> integerGen <> Gen.constant "." <> integerGen
 
 optFractionalGen :: Gen Text
-optFractionalGen = signGen' <> Gen.choice [decBefore, decAfter]
+optFractionalGen = signGen <> Gen.choice [decBefore, decAfter]
 
 jsonNumberGen :: Gen Text
 jsonNumberGen =
@@ -65,3 +75,57 @@ unicodeEscapeGen =
 
 jsonUnicodeEscapeStringGen :: Gen Text
 jsonUnicodeEscapeStringGen = Gen.constant "\"" <> unicodeEscapeGen <> Gen.constant "\""
+
+type GenNullables = Bool
+type Nullable = Bool
+type TaggedSchema = (Schema, Nullable)
+
+data Schema
+  = SBool
+  | SList TaggedSchema
+  | SNumber
+  | SObject [(Text, TaggedSchema)]
+  | SString
+
+textGen :: Gen Text
+textGen = Gen.text (Range.linear 3 8) Gen.alpha
+
+type SchemaGen = ReaderT GenNullables Gen
+
+smallListGen :: Gen a -> Gen [a]
+smallListGen = Gen.list (Range.linear 1 10)
+
+schemaGen' :: SchemaGen TaggedSchema
+schemaGen' = ask >>= \case
+  False -> (,False) <$> bareSchemaGen
+  True -> flip (,) <$> Gen.bool <*> bareSchemaGen
+
+bareSchemaGen :: SchemaGen Schema
+bareSchemaGen =
+  Gen.choice
+    [ pure SBool
+    , SList <$> schemaGen'
+    , pure SNumber
+    , SObject . nubOrdOn fst <$> mapReaderT smallListGen ((,) <$> lift textGen <*> schemaGen')
+    , pure SString
+    ]
+
+schemaGen :: GenNullables -> Gen TaggedSchema
+schemaGen nullables = runReaderT schemaGen' nullables
+
+schemaElemGen :: TaggedSchema -> Gen A.Value
+schemaElemGen (bareSchema, False) = bareSchemaElemGen bareSchema
+schemaElemGen (bareSchema, True) = Gen.int (Range.linear 0 10) >>= \case
+  a | a == 0    -> pure A.Null
+    | otherwise -> bareSchemaElemGen bareSchema
+
+bareSchemaElemGen :: Schema -> Gen A.Value
+bareSchemaElemGen bareSchema = case bareSchema of
+  SBool     -> A.Bool <$> Gen.bool
+  SList s   -> A.Array . V.fromList <$> smallListGen (schemaElemGen s)
+  SNumber   -> A.Number . fromFloatDigits <$> Gen.double (Range.linearFrac (-1) 1)
+  SObject l -> object <$> traverse objectPairGen l
+  SString   -> A.String <$> textGen
+
+objectPairGen :: KeyValue kv => (Text, TaggedSchema) -> Gen (kv)
+objectPairGen (k, s) = (k .=) <$> schemaElemGen s
