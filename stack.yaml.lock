@@ -3,38 +3,10 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: haskell-lsp-0.16.0.0@sha256:6ac4b58e6caef43546a3c115f1aaaae0e23d30f0e37b8c4e94525468e9982d09,5264
-    pantry-tree:
-      size: 1725
-      sha256: 31b245f4da5b5b844be9802bb2bfd397c90c0a50b063e5bae26648c6220aaf7f
-  original:
-    hackage: haskell-lsp-0.16.0.0
-- completed:
-    hackage: haskell-lsp-types-0.16.0.0@sha256:57729b32b1ca65d4869e1e518fa4df749d4488ec5f11e23b50c2b89417f5f211,2882
-    pantry-tree:
-      size: 2369
-      sha256: cc24c23f741e777b9c01ccd700af034e2258e560f5fdb271d08befd4b03196b7
-  original:
-    hackage: haskell-lsp-types-0.16.0.0
-- completed:
-    hackage: lsp-test-0.7.0.0@sha256:f38d1205680602260f3545ef54aebda63f170a8bcc0e748d25eef5ba61d6bb1d,3506
-    pantry-tree:
-      size: 1112
-      sha256: 27a668c7b3ec3bf8db4b108f31ff93e01172a298dc87e57260dd38475b0b5cfd
-  original:
-    hackage: lsp-test-0.7.0.0
-- completed:
-    hackage: hie-bios-0.2.0@sha256:99c6a71c02bc89fa90106a8869c08ee26a264ee13a74f610064dd2f32622613d,3220
-    pantry-tree:
-      size: 1308
-      sha256: bcae02b3c440458be14f66fb59fd470eb7fe728c61bfa96b1d6975491f9b9b64
-  original:
-    hackage: hie-bios-0.2.0
+packages: []
 snapshots:
 - completed:
-    size: 529130
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2019/9/16.yaml
-    sha256: a8c2355f4f1c46896e5c32aa0b576bbacf0677ff8a164333fa29733d39c3cf4f
-  original: nightly-2019-09-16
+    size: 590100
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/28.yaml
+    sha256: 428ec8d5ce932190d3cbe266b9eb3c175cd81e984babf876b64019e2cbe4ea68
+  original: lts-18.28

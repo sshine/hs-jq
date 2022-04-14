@@ -4,7 +4,7 @@ version: 0.1.0
 homepage: https://github.com/sshine/hs-jq
 author: Simon Shine
 maintainer: shreddedglory@gmail.com
-copyright: 2019 Simon Shine
+copyright: 2019-2022 Simon Shine
 extra-source-files:
   - README.md
 
@@ -15,16 +15,6 @@ dependencies:
   - scientific
   - text
   - mtl
-  # While ghcide fails to discover test dependencies when hie.yaml contains
-  # 'cradle: {stack}', add test dependencies as global dependencies. Yick!
-  - tasty
-  - tasty-discover
-  - tasty-hspec
-  - tasty-hedgehog
-  - hedgehog
-  - hspec
-  - hspec-megaparsec
-  - raw-strings-qq
 
 default-extensions:
   - OverloadedStrings
@@ -48,6 +38,17 @@ tests:
     source-dirs: test
     dependencies:
       - jq
+      - tasty
+      - tasty-discover
+      - tasty-hspec
+      - tasty-hedgehog
+      - hedgehog
+      - hspec
+      - hspec-megaparsec
+      - raw-strings-qq
+      - aeson
+      - containers
+      - vector
 
 benchmarks:
   bench:

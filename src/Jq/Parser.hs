@@ -35,6 +35,7 @@ newtype Parser a =
   deriving ( Functor, Applicative, Alternative, Monad, MonadPlus
            , MonadReader JqParserEnv
            , MonadParsec Void Text
+           , MonadFail
            )
 
 newtype JqParserEnv = JqParserEnv
