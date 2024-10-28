@@ -11,6 +11,7 @@ import           Data.Void
 import           Control.Monad (forM_)
 
 import           Hedgehog hiding (Var)
+import           Test.Hspec (describe, it, runIO, Spec)
 import           Test.Hspec.Megaparsec
 import           Test.Tasty.Hspec
 import           Text.Megaparsec (parse, ParseErrorBundle)

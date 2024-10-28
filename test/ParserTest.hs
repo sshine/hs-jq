@@ -13,6 +13,7 @@ import           Data.Text.Read (hexadecimal)
 import           Data.Void
 
 import           Hedgehog hiding (Var)
+import           Test.Hspec (describe, it, Spec)
 import           Test.Hspec.Megaparsec
 import           Test.Tasty.Hspec
 import           Text.Megaparsec (parse, ParseErrorBundle)

@@ -10,6 +10,7 @@ import           Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as IO
 
+import           Test.Hspec (describe, it, runIO, Spec)
 import           Test.Hspec.Megaparsec
 import           Test.Tasty.Hspec
 

@@ -4,7 +4,7 @@ version: 0.1.0
 homepage: https://github.com/sshine/hs-jq
 author: Simon Shine
 maintainer: shreddedglory@gmail.com
-copyright: 2019-2022 Simon Shine
+copyright: 2019-2024 Simon Shine
 extra-source-files:
   - README.md
 

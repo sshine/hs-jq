@@ -8,6 +8,7 @@ import           Control.Arrow (second)
 import           Control.Monad.Reader
 import           Data.Scientific (fromFloatDigits)
 import           Data.Aeson as A
+import           Data.Aeson.Key as AK
 import           Data.Containers.ListUtils
 import           Data.List (nubBy)
 import           Data.Vector as V
@@ -128,4 +129,4 @@ bareSchemaElemGen bareSchema = case bareSchema of
   SString   -> A.String <$> textGen
 
 objectPairGen :: KeyValue kv => (Text, TaggedSchema) -> Gen kv
-objectPairGen (k, s) = (k .=) <$> schemaElemGen s
+objectPairGen (k, s) = (AK.fromText k .=) <$> schemaElemGen s

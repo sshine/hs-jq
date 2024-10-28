@@ -1,0 +1,76 @@
+name: Haskell CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        cabal:
+          - "3.12"
+        ghc:
+          - "9.6"
+          - "9.4"
+          - "9.2"
+    env:
+      CONFIG: "--enable-tests --enable-benchmarks"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2, 2024-10-23
+
+      - name: Setup Haskell
+        uses: haskell-actions/setup@dd344bc1cec854a369df8814ce17ef337d6e6170 # v2.7.6, 2024-08-12
+        with:
+          ghc-version: ${{ matrix.ghc }}
+          cabal-version: ${{ matrix.cabal }}
+
+      - name: Update Cabal
+        run: cabal update
+
+      - name: Freeze Cabal
+        run: cabal freeze $CONFIG
+
+      - name: Setup Cache
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2, 2024-10-22
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project.freeze') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.ghc }}-
+
+      - name: Install tasty-discover
+        run: cabal install tasty-discover
+
+      - name: Build source code
+        run: cabal build $CONFIG
+
+      - name: Test
+        run: cabal test $CONFIG --test-show-details=always
+
+      - name: Setup HLint
+        uses: haskell-actions/hlint-setup@fe9cd1cd1af94a23900c06738e73f6ddb092966a # v2.4.10, 2024-06-20
+
+      - name: Run HLint
+        uses: haskell-actions/hlint-run@eaca4cfbf4a69f4eb875df38b6bc3e1657020378 # v2.4.10, 2024-06-20
+        with:
+          path: src/
+          fail-on: warning
+
+      - name: Run benchmarks
+        run: cabal bench $CONFIG
+
+      - name: Generate Haddock
+        run: cabal haddock $CONFIG
+
+      - name: Generate sdist
+        run: cabal sdist

@@ -4,6 +4,7 @@ module TestHelpers where
 import qualified Data.Text as Text
 import           Data.Text (Text)
 
+import           Test.Hspec (it, Spec)
 import           Test.Hspec.Megaparsec
 import           Test.Tasty.Hspec
 

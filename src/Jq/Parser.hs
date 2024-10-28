@@ -4,7 +4,7 @@
 module Jq.Parser where
 
 import           Control.Applicative hiding (many)
-import           Control.Monad (void)
+import           Control.Monad (void, MonadPlus)
 import           Control.Monad.Reader
 import           Data.Char (isLetter, isAlpha, isAscii, isDigit, isHexDigit, chr)
 import           Data.Maybe (fromMaybe)
